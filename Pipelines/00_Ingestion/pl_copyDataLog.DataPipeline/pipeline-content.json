@@ -1,0 +1,129 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "name": "SP Insert CopyDataLog",
+        "type": "SqlServerStoredProcedure",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "storedProcedureName": "[log].[uspInsertCopyDataLog]",
+          "storedProcedureParameters": {
+            "DestinationPath": {
+              "value": {
+                "value": "@pipeline().parameters.DestinationPath",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "RowCount": {
+              "value": {
+                "value": "@pipeline().parameters.RowCount",
+                "type": "Expression"
+              },
+              "type": "Int32"
+            },
+            "SourceReadCommand": {
+              "value": {
+                "value": "@pipeline().parameters.SourceReadCommand",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "SourceLocationName": {
+              "value": {
+                "value": "@pipeline().parameters.SourceLocationName",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "StartDate": {
+              "value": {
+                "value": "@pipeline().parameters.StartDate",
+                "type": "Expression"
+              },
+              "type": "Datetime"
+            },
+            "Status": {
+              "value": {
+                "value": "@pipeline().parameters.Status",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "ObjectName": {
+              "value": {
+                "value": "@pipeline().parameters.ObjectName",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "Model": {
+              "value": {
+                "value": "@pipeline().parameters.ModelName",
+                "type": "Expression"
+              },
+              "type": "String"
+            }
+          }
+        },
+        "linkedService": {
+          "name": "53d0f787_471c_4b90_b4a8_5654bdb3fdfe",
+          "properties": {
+            "annotations": [],
+            "type": "DataWarehouse",
+            "typeProperties": {
+              "endpoint": "@pipeline().parameters.param_official_warehouse_connstring",
+              "artifactId": "@pipeline().parameters.param_official_warehouse_id",
+              "workspaceId": "@pipeline().parameters.param_official_workspace_id"
+            }
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "DestinationPath": {
+        "type": "string"
+      },
+      "StartDate": {
+        "type": "string"
+      },
+      "RowCount": {
+        "type": "string"
+      },
+      "SourceLocationName": {
+        "type": "string"
+      },
+      "Status": {
+        "type": "string"
+      },
+      "ObjectName": {
+        "type": "string"
+      },
+      "SourceReadCommand": {
+        "type": "string"
+      },
+      "ModelName": {
+        "type": "string"
+      },
+      "param_official_workspace_id": {
+        "type": "string",
+        "defaultValue": "4fc684e0-5902-419b-bf6a-9de7fc814327"
+      },
+      "param_official_warehouse_id": {
+        "type": "string",
+        "defaultValue": "46aa9f1b-8004-465e-9f2a-e8739eb84be7"
+      },
+      "param_official_warehouse_connstring": {
+        "type": "string",
+        "defaultValue": "fw33yqpjyhrefncr5lpnqy25oa-4ccmmtyclgnudp3ktxt7zakde4.datawarehouse.fabric.microsoft.com"
+      }
+    }
+  }
+}

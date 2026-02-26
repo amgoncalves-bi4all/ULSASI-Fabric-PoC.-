@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Warehouse",
+    "displayName": "dw_modernBI_fabricFramework_01"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "57857eb5-61bc-4297-bc48-48ec481f33d8"
+  }
+}

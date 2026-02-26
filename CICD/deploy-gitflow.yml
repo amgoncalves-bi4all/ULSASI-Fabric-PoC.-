@@ -1,0 +1,60 @@
+# GitFlow Deployment Pipeline for Microsoft Fabric
+# Uses fabric-gitflow-templates for standardized deployment
+# Supports dedicated primary branches: develop→dev, test→test, main→prod
+
+# Trigger on pushes to target branches (after PR merge, revert, or direct commit)
+trigger:
+  branches:
+    include:
+      - prod      # production environment
+      - test      # test environment  
+  paths:
+    exclude:
+      - README.md
+      - CHANGELOG.md
+      - .github/**
+      - .gitignore
+      - LICENSE
+      # CICD/** and Scripts/** NOT excluded to ensure revert deployments work
+
+# Trigger on PR validation for environment branches only (excludes main/Fabric UI PRs)
+pr:
+  branches:
+    include:
+      - test      # PR validation for test environment
+      - prod      # PR validation for prod environment
+      # main excluded - PRs to main are done via Fabric UI
+  paths:
+    exclude:
+      - CICD/**
+      - Scripts/**
+      - README.md
+      - CHANGELOG.md
+      - .github/**
+      - .gitignore
+      - LICENSE
+
+# Reference to template repository
+resources:
+  repositories:
+  - repository: fabric-templates
+    type: git
+    name: fabric-gitflow-templates
+    ref: main
+
+# Use standard GitFlow template with branch-based environment mapping
+extends:
+  template: templates/deploy-gitflow-stage.yml@fabric-templates
+  parameters:
+    environments:
+    - name: 'test'
+      displayName: 'Test Environment'
+      sourceBranch: 'test'
+      workspaceId: 'TEST_WORKSPACE_ID'
+    - name: 'production'
+      displayName: 'Production Environment'  
+      sourceBranch: 'prod'
+      workspaceId: 'PROD_WORKSPACE_ID'
+    servicePrincipalGroup: 'FabricServicePrincipal'
+    workspaceVariableGroup: 'FabricVariables'
+    scriptsRepository: 'fabric-templates'

@@ -1,0 +1,343 @@
+trigger:
+  branches:
+    include:
+    - main
+    - develop
+  paths:
+    include:
+    - ConfigFiles/environments/**
+    exclude:
+    - CICD/**  # Exclude CICD folder changes to prevent triggering on pipeline updates
+
+variables:
+  - name: isMain
+    value: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
+  - name: isDevelop
+    value: $[eq(variables['Build.SourceBranch'], 'refs/heads/develop')]
+
+stages:
+- stage: DiscoverAndValidate
+  displayName: 'Discover Models and Validate Configurations'
+  jobs:
+  - job: DiscoverModels
+    displayName: 'Discover Available Models'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.9'
+        
+    - script: |
+        pip install pyyaml jsonschema
+      displayName: 'Install dependencies'
+      
+    - task: PowerShell@2
+      displayName: 'Discover Models and Environments'
+      inputs:
+        targetType: 'inline'
+        script: |
+          # Discover all YAML models in dev environment (baseline)
+          $devPath = "ConfigFiles/environments/dev"
+          $models = @()
+          
+          if (Test-Path $devPath) {
+              $yamlFiles = Get-ChildItem -Path $devPath -Filter "*.yml" -File
+              foreach ($file in $yamlFiles) {
+                  $modelName = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
+                  # Exclude inferredMembersConfig from model discovery
+                  if ($modelName -ne "inferredMembersConfig") {
+                      $models += $modelName
+                      Write-Host "Found model: $modelName"
+                  } else {
+                      Write-Host "Skipping inferredMembersConfig (not a model configuration)"
+                  }
+              }
+          }
+          
+          # Check which environments exist for each model
+          $environments = @("dev", "test", "prod")
+          $deploymentMatrix = @{}
+          
+          foreach ($model in $models) {
+              $deploymentMatrix[$model] = @{}
+              foreach ($env in $environments) {
+                  $envPath = "ConfigFiles/environments/$env"
+                  $configFile = "$envPath/$model.yml"
+                  $exists = Test-Path $configFile
+                  $deploymentMatrix[$model][$env] = $exists
+                  
+                  if ($exists) {
+                      Write-Host "✓ $model.yml exists for $env environment"
+                  } else {
+                      Write-Host "⚠ $model.yml missing for $env environment" -ForegroundColor Yellow
+                  }
+              }
+          }
+          
+          # Output variables for subsequent stages - ENSURE JSON ARRAY FORMAT
+          if ($models.Count -eq 0) {
+              $modelsJson = "[]"
+          } elseif ($models.Count -eq 1) {
+              # Force array format even for single item
+              $modelsJson = "[$($models[0] | ConvertTo-Json)]"
+          } else {
+              $modelsJson = $models | ConvertTo-Json -Compress
+          }
+          
+          Write-Host "Models JSON output: $modelsJson"
+          Write-Host "##vso[task.setvariable variable=availableModels;isOutput=true]$modelsJson"
+          
+          $matrixJson = $deploymentMatrix | ConvertTo-Json -Compress -Depth 3
+          Write-Host "##vso[task.setvariable variable=deploymentMatrix;isOutput=true]$matrixJson"
+        pwsh: true
+      name: 'modelDiscovery'
+
+  - job: ValidateConfigurations
+    displayName: 'Validate Configuration Files'
+    dependsOn: DiscoverModels
+    variables:
+      availableModels: $[ dependencies.DiscoverModels.outputs['modelDiscovery.availableModels'] ]
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.9'
+        
+    - script: |
+        pip install pyyaml jsonschema
+      displayName: 'Install dependencies'
+        
+    - script: |
+        echo "Available models: $(availableModels)"
+        
+        # Check if availableModels is empty or null
+        if [ -z "$(availableModels)" ] || [ "$(availableModels)" = "null" ] || [ "$(availableModels)" = "[]" ]; then
+            echo "No models found to validate"
+            exit 0
+        fi
+        
+        # Parse JSON array into individual lines and validate each model
+        echo '$(availableModels)' | python3 -c "
+        import sys
+        import json
+        try:
+            models = json.load(sys.stdin)
+            if isinstance(models, list):
+                for model in models:
+                    print(model)
+            else:
+                print('Error: Expected JSON array but got:', type(models))
+                sys.exit(1)
+        except json.JSONDecodeError as e:
+            print('Error parsing JSON:', e)
+            sys.exit(1)
+        except Exception as e:
+            print('Error:', e)
+            sys.exit(1)
+        " > models.txt
+        
+        # Validate if models.txt was created and has content
+        if [ ! -s models.txt ]; then
+            echo "No models to validate - models.txt is empty"
+            exit 0
+        fi
+        
+        echo "Models to validate:"
+        cat models.txt
+        
+        # Validate each model
+        while IFS= read -r model; do
+            if [ -n "$model" ]; then
+                echo "Validating model: '$model'"
+                
+                # Validate dev (always exists since we discovered from dev)
+                if [ -f "ConfigFiles/environments/dev/$model.yml" ]; then
+                    echo "Validating dev/$model.yml"
+                    python ConfigFiles/scripts/validate_config.py "ConfigFiles/environments/dev/$model.yml" || exit 1
+                else
+                    echo "Warning: dev/$model.yml not found (this shouldn't happen)"
+                fi
+                
+                # Validate test if exists
+                if [ -f "ConfigFiles/environments/test/$model.yml" ]; then
+                    echo "Validating test/$model.yml"
+                    python ConfigFiles/scripts/validate_config.py "ConfigFiles/environments/test/$model.yml" || exit 1
+                else
+                    echo "⚠ test/$model.yml does not exist - skipping validation"
+                fi
+                
+                # Validate prod if exists
+                if [ -f "ConfigFiles/environments/prod/$model.yml" ]; then
+                    echo "Validating prod/$model.yml"
+                    python ConfigFiles/scripts/validate_config.py "ConfigFiles/environments/prod/$model.yml" || exit 1
+                else
+                    echo "⚠ prod/$model.yml does not exist - skipping validation"
+                fi
+                
+                echo "✓ Completed validation for model: '$model'"
+            fi
+        done < models.txt
+        
+        echo "All available model configurations validated successfully"
+      displayName: 'Validate all available model configurations'
+
+- stage: DeployDev
+  displayName: 'Deploy to Development'
+  dependsOn: DiscoverAndValidate
+  condition: and(succeeded(), eq(variables.isMain, true), ne(variables['DEV_WORKSPACE_ID'], ''))
+  variables:
+  - group: FabricVariables
+  - name: availableModels
+    value: $[ stageDependencies.DiscoverAndValidate.DiscoverModels.outputs['modelDiscovery.availableModels'] ]
+  jobs:
+  - job: DeployConfigDev
+    displayName: 'Deploy Config to Dev Environment'
+    condition: ne(variables['DEV_WORKSPACE_ID'], '')
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+    - checkout: self
+    - task: PowerShell@2
+      displayName: 'Validate Development Environment Variables'
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "=== Development Environment Validation ===" -ForegroundColor Cyan
+          Write-Host "DEV_WORKSPACE_ID: $(DEV_WORKSPACE_ID)" -ForegroundColor White
+          Write-Host "DEV_LAKEHOUSE_ID: $(DEV_LAKEHOUSE_ID)" -ForegroundColor White
+          Write-Host "Available Models: $(availableModels)" -ForegroundColor White
+          
+          if ([string]::IsNullOrWhiteSpace("$(DEV_WORKSPACE_ID)")) {
+              Write-Error "DEV_WORKSPACE_ID is not defined in FabricVariables variable group"
+              exit 1
+          }
+          
+          if ([string]::IsNullOrWhiteSpace("$(DEV_LAKEHOUSE_ID)")) {
+              Write-Error "DEV_LAKEHOUSE_ID is not defined in FabricVariables variable group"  
+              exit 1
+          }
+          
+          Write-Host "✅ Development environment variables validated successfully" -ForegroundColor Green
+        pwsh: true
+        
+    - task: AzurePowerShell@5
+      displayName: 'Deploy Dev Configuration'
+      inputs:
+        azureSubscription: 'DevOps-Fabric Connection'
+        scriptType: 'FilePath'
+        scriptPath: 'ConfigFiles/scripts/deploy-configOneLake.ps1'
+        scriptArguments: >-
+          -Environment dev
+          -SourcePath "ConfigFiles/environments/dev"  
+          -WorkspaceId $(DEV_WORKSPACE_ID)
+          -LakehouseId $(DEV_LAKEHOUSE_ID)
+          -AvailableModels '$(availableModels)'
+        azurePowerShellVersion: 'LatestVersion'
+
+- stage: DeployTest
+  displayName: 'Deploy to Test'
+  dependsOn: DiscoverAndValidate
+  condition: and(succeeded(), eq(variables.isMain, true), ne(variables['TEST_WORKSPACE_ID'], ''))
+  variables:
+    - group: FabricVariables
+    - name: availableModels
+      value: $[ stageDependencies.DiscoverAndValidate.DiscoverModels.outputs['modelDiscovery.availableModels'] ]
+  jobs:
+  - job: DeployConfigTest
+    displayName: 'Deploy Config to Test Environment'
+    condition: ne(variables['TEST_WORKSPACE_ID'], '')
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+    - checkout: self
+    - task: PowerShell@2
+      displayName: 'Validate Test Environment Variables'
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "=== Test Environment Validation ===" -ForegroundColor Cyan
+          Write-Host "TEST_WORKSPACE_ID: $(TEST_WORKSPACE_ID)" -ForegroundColor White
+          Write-Host "TEST_LAKEHOUSE_ID: $(TEST_LAKEHOUSE_ID)" -ForegroundColor White
+          Write-Host "Available Models: $(availableModels)" -ForegroundColor White
+          
+          if ([string]::IsNullOrWhiteSpace("$(TEST_WORKSPACE_ID)")) {
+              Write-Error "TEST_WORKSPACE_ID is not defined in FabricVariables variable group"
+              exit 1
+          }
+          
+          if ([string]::IsNullOrWhiteSpace("$(TEST_LAKEHOUSE_ID)")) {
+              Write-Error "TEST_LAKEHOUSE_ID is not defined in FabricVariables variable group"  
+              exit 1
+          }
+          
+          Write-Host "✅ Test environment variables validated successfully" -ForegroundColor Green
+        pwsh: true
+        
+    - task: AzurePowerShell@5
+      displayName: 'Deploy Test Configuration'
+      inputs:
+        azureSubscription: 'DevOps-Fabric Connection'
+        scriptType: 'FilePath'
+        scriptPath: 'ConfigFiles/scripts/deploy-configOneLake.ps1'
+        scriptArguments: >-
+          -Environment test
+          -SourcePath "ConfigFiles/environments/test"
+          -WorkspaceId $(TEST_WORKSPACE_ID)
+          -LakehouseId $(TEST_LAKEHOUSE_ID)
+          -AvailableModels '$(availableModels)'
+        azurePowerShellVersion: 'LatestVersion'
+
+- stage: DeployProd
+  displayName: 'Deploy to Production'
+  dependsOn: DeployTest
+  condition: and(succeeded(), eq(variables.isMain, true), ne(variables['PROD_WORKSPACE_ID'], ''))
+  variables:
+  - group: FabricVariables
+  - name: availableModels
+    value: $[ stageDependencies.DiscoverAndValidate.DiscoverModels.outputs['modelDiscovery.availableModels'] ]
+  jobs:
+  - job: DeployConfigProd
+    displayName: 'Deploy Config to Production Environment'
+    condition: ne(variables['PROD_WORKSPACE_ID'], '')
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+    - checkout: self
+    - task: PowerShell@2
+      displayName: 'Validate Production Environment Variables'
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "=== Production Environment Validation ===" -ForegroundColor Cyan
+          Write-Host "PROD_WORKSPACE_ID: $(PROD_WORKSPACE_ID)" -ForegroundColor White
+          Write-Host "PROD_LAKEHOUSE_ID: $(PROD_LAKEHOUSE_ID)" -ForegroundColor White
+          Write-Host "Available Models: $(availableModels)" -ForegroundColor White
+          
+          if ([string]::IsNullOrWhiteSpace("$(PROD_WORKSPACE_ID)")) {
+              Write-Error "PROD_WORKSPACE_ID is not defined in FabricVariables variable group"
+              exit 1
+          }
+          
+          if ([string]::IsNullOrWhiteSpace("$(PROD_LAKEHOUSE_ID)")) {
+              Write-Error "PROD_LAKEHOUSE_ID is not defined in FabricVariables variable group"  
+              exit 1
+          }
+          
+          Write-Host "✅ Production environment variables validated successfully" -ForegroundColor Green
+        pwsh: true
+        
+    - task: AzurePowerShell@5
+      displayName: 'Deploy Production Configuration'
+      inputs:
+        azureSubscription: 'DevOps-Fabric Connection'
+        scriptType: 'FilePath'
+        scriptPath: 'ConfigFiles/scripts/deploy-configOneLake.ps1'
+        scriptArguments: >-
+          -Environment prod
+          -SourcePath "ConfigFiles/environments/prod"
+          -WorkspaceId $(PROD_WORKSPACE_ID)
+          -LakehouseId $(PROD_LAKEHOUSE_ID)
+          -AvailableModels '$(availableModels)'
+        azurePowerShellVersion: 'LatestVersion'

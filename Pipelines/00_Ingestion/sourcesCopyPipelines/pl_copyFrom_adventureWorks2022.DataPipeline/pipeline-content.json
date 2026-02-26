@@ -1,0 +1,372 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Copy",
+        "typeProperties": {
+          "source": {
+            "type": "AzureSqlSource",
+            "sqlReaderQuery": {
+              "value": "@activity('lk_copyDataConfig').output.firstRow.sourceReadCommand",
+              "type": "Expression"
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00",
+            "datasetSettings": {
+              "type": "AzureSqlTable",
+              "typeProperties": {
+                "database": "sql-weu-dev-adventureworks2022-01"
+              },
+              "schema": [],
+              "externalReferences": {
+                "connection": "a5d8d3dc-e298-47d6-974d-48c1562eab4b"
+              },
+              "annotations": []
+            }
+          },
+          "sink": {
+            "type": "ParquetSink",
+            "formatSettings": {
+              "type": "ParquetWriteSettings",
+              "enableVertiParquet": true
+            },
+            "storeSettings": {
+              "type": "LakehouseWriteSettings"
+            },
+            "datasetSettings": {
+              "type": "Parquet",
+              "typeProperties": {
+                "location": {
+                  "type": "LakehouseLocation",
+                  "folderPath": {
+                    "value": "@activity('lk_copyDataConfig').output.firstRow.destinationDirectoryPattern",
+                    "type": "Expression"
+                  },
+                  "fileName": {
+                    "value": "@activity('lk_copyDataConfig').output.firstRow.destinationObjectPattern",
+                    "type": "Expression"
+                  }
+                },
+                "compressionCodec": "snappy"
+              },
+              "schema": [],
+              "linkedService": {
+                "name": "41ab510a_cbd6_4625_9331_6f64d4f7d8da",
+                "properties": {
+                  "type": "Lakehouse",
+                  "typeProperties": {
+                    "artifactId": "@pipeline().parameters.param_official_lh_bronze_id",
+                    "workspaceId": "@pipeline().parameters.param_official_workspace_id",
+                    "rootFolder": "Files"
+                  },
+                  "annotations": []
+                }
+              },
+              "annotations": []
+            }
+          },
+          "translator": {
+            "type": "TabularTranslator",
+            "typeConversion": true,
+            "typeConversionSettings": {
+              "allowDataTruncation": true,
+              "treatBooleanAsNumber": false
+            }
+          },
+          "enableStaging": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "cd_copySQLTable",
+        "dependsOn": [
+          {
+            "activity": "lk_copyDataConfig",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderStoredProcedureName": "[admin].[uspSelectTempCopyDataConfig]",
+            "storedProcedureParameters": {
+              "model": {
+                "type": "String",
+                "value": {
+                  "value": "@pipeline().parameters.model",
+                  "type": "Expression"
+                }
+              },
+              "sourceObjectName": {
+                "type": "String",
+                "value": {
+                  "value": "@pipeline().parameters.sourceObjectName",
+                  "type": "Expression"
+                }
+              }
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "079145a7_eb20_4d7e_a3be_c787cc4facad",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "@pipeline().parameters.param_official_warehouse_id",
+                  "endpoint": "@pipeline().parameters.param_official_warehouse_connstring",
+                  "workspaceId": "@pipeline().parameters.param_official_workspace_id"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 5,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "lk_copyDataConfig",
+        "dependsOn": []
+      },
+      {
+        "type": "ExecutePipeline",
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "47dd614f-12c7-4c61-b7bc-5deeb5dc235f",
+            "type": "PipelineReference"
+          },
+          "parameters": {
+            "DestinationPath": {
+              "value": "@concat(activity('lk_copyDataConfig').output.firstRow.destinationDirectoryPattern,'/',activity('lk_copyDataConfig').output.firstRow.destinationObjectPattern)",
+              "type": "Expression"
+            },
+            "StartDate": {
+              "value": "@variables('startDate')",
+              "type": "Expression"
+            },
+            "RowCount": {
+              "value": "@activity('cd_copySQLTable').output.rowsCopied",
+              "type": "Expression"
+            },
+            "SourceLocationName": {
+              "value": "@activity('lk_copyDataConfig').output.firstRow.SourceLocationName",
+              "type": "Expression"
+            },
+            "Status": {
+              "value": "@activity('cd_copySQLTable').output.executionDetails[0].status",
+              "type": "Expression"
+            },
+            "ObjectName": {
+              "value": "@activity('lk_copyDataConfig').output.firstRow.SourceObjectName",
+              "type": "Expression"
+            },
+            "SourceReadCommand": {
+              "value": "@activity('lk_copyDataConfig').output.firstRow.SourceReadCommand",
+              "type": "Expression"
+            },
+            "ModelName": {
+              "value": "@pipeline().parameters.model",
+              "type": "Expression"
+            },
+            "param_official_workspace_id": {
+              "value": "@pipeline().parameters.param_official_workspace_id",
+              "type": "Expression"
+            },
+            "param_official_warehouse_id": {
+              "value": "@pipeline().parameters.param_official_warehouse_id",
+              "type": "Expression"
+            },
+            "param_official_warehouse_connstring": {
+              "value": "@pipeline().parameters.param_official_warehouse_connstring",
+              "type": "Expression"
+            }
+          },
+          "waitOnCompletion": true
+        },
+        "policy": {
+          "secureInput": false
+        },
+        "name": "PL_SP_CopyDataLog",
+        "dependsOn": [
+          {
+            "activity": "cd_copySQLTable",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SqlServerStoredProcedure",
+        "typeProperties": {
+          "storedProcedureName": "[admin].[uspUpdateCopyDataConfig]",
+          "storedProcedureParameters": {
+            "Model": {
+              "value": {
+                "value": "@pipeline().parameters.model",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "SourceObjectName": {
+              "value": {
+                "value": "@pipeline().parameters.sourceObjectName",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "StartDate": {
+              "value": {
+                "value": "@variables('startDate')",
+                "type": "Expression"
+              },
+              "type": "Datetime"
+            }
+          }
+        },
+        "linkedService": {
+          "name": "2e01a7a6_6352_43fa_9e97_9ad2a7db4b2e",
+          "properties": {
+            "type": "DataWarehouse",
+            "typeProperties": {
+              "artifactId": "@pipeline().parameters.param_official_warehouse_id",
+              "endpoint": "@pipeline().parameters.param_official_warehouse_connstring",
+              "workspaceId": "@pipeline().parameters.param_official_workspace_id"
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 5,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "SP_UpdateCopyDataConfig",
+        "dependsOn": [
+          {
+            "activity": "PL_SP_CopyDataLog",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "destinationDirectoryName",
+          "value": {
+            "value": "@concat(activity('lk_copyDataConfig').output.firstRow.DestinationDirectoryPattern,'/',formatDateTime(variables('startDate'),'yyyy/MM/dd/HH/mm'))",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "DestinationDirectoryName",
+        "dependsOn": [
+          {
+            "activity": "lk_copyDataConfig",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "destinationFileName",
+          "value": {
+            "value": "@concat(activity('lk_copyDataConfig').output.firstRow.DestinationObjectPattern,'_',formatDateTime(variables('startDate'),'yyyyMMdd_HHmm'),'.',activity('lk_copyDataConfig').output.firstRow.DestinationObjectType)",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "DestinationFileName",
+        "dependsOn": [
+          {
+            "activity": "lk_copyDataConfig",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "startDate",
+          "value": {
+            "value": "@convertFromUtc(utcNow(),'GMT Standard Time')",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "StartDate",
+        "dependsOn": []
+      }
+    ],
+    "parameters": {
+      "model": {
+        "type": "string"
+      },
+      "sourceObjectName": {
+        "type": "string"
+      },
+      "param_official_workspace_id": {
+        "type": "string",
+        "defaultValue": "4fc684e0-5902-419b-bf6a-9de7fc814327"
+      },
+      "param_official_lh_bronze_id": {
+        "type": "string",
+        "defaultValue": "082b101a-c0f9-474c-91b7-93344e39e98e"
+      },
+      "param_official_warehouse_id": {
+        "type": "string",
+        "defaultValue": "46aa9f1b-8004-465e-9f2a-e8739eb84be7"
+      },
+      "param_official_warehouse_connstring": {
+        "type": "string",
+        "defaultValue": "fw33yqpjyhrefncr5lpnqy25oa-4ccmmtyclgnudp3ktxt7zakde4.datawarehouse.fabric.microsoft.com"
+      }
+    },
+    "variables": {
+      "startDate": {
+        "type": "String"
+      },
+      "destinationDirectoryName": {
+        "type": "String"
+      },
+      "destinationFileName": {
+        "type": "String"
+      }
+    }
+  }
+}

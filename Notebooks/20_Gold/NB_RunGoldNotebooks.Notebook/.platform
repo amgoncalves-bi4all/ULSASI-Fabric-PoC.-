@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "NB_RunGoldNotebooks",
+    "description": "Notebook to run configured notebooks"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "5bc14a67-e2c6-4b87-9b04-ac0fca07de2f"
+  }
+}

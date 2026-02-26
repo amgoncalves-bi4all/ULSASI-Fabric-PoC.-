@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "NB_DIM_Person",
+    "description": "Example of a notebook for loading an SCD2 dimension "
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "375fb247-68e0-4704-aac6-8122cb68e450"
+  }
+}

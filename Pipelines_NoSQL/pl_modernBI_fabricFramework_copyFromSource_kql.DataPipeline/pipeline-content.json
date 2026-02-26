@@ -1,0 +1,133 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderStoredProcedureName": "[admin].[uspSelectCopyDataConfig]",
+            "storedProcedureParameters": {
+              "model": {
+                "type": "String",
+                "value": {
+                  "value": "@pipeline().parameters.Model",
+                  "type": "Expression"
+                }
+              }
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "typeProperties": {
+              "schema": "admin",
+              "table": "copyDataConfig"
+            },
+            "schema": [],
+            "linkedService": {
+              "name": "dw_modernBI_fabricFramework_01",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "46aa9f1b-8004-465e-9f2a-e8739eb84be7",
+                  "endpoint": "fw33yqpjyhrefncr5lpnqy25oa-4ccmmtyclgnudp3ktxt7zakde4.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "4fc684e0-5902-419b-bf6a-9de7fc814327"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "lk_get_data_from_copyDataConfig",
+        "dependsOn": []
+      },
+      {
+        "type": "ForEach",
+        "typeProperties": {
+          "items": {
+            "value": "@activity('lk_get_data_from_copyDataConfig').output.value",
+            "type": "Expression"
+          },
+          "activities": [
+            {
+              "type": "Switch",
+              "typeProperties": {
+                "on": {
+                  "value": "@item().sourceLocationName",
+                  "type": "Expression"
+                },
+                "cases": [
+                  {
+                    "value": "adventureworks2022",
+                    "activities": [
+                      {
+                        "type": "ExecutePipeline",
+                        "typeProperties": {
+                          "pipeline": {
+                            "referenceName": "9701a9eb-20ce-b666-4ff9-930b7cd68b10",
+                            "type": "PipelineReference"
+                          },
+                          "parameters": {
+                            "model": {
+                              "value": "@item().model",
+                              "type": "Expression"
+                            },
+                            "sourceObjectName": {
+                              "value": "@item().sourceObjectName",
+                              "type": "Expression"
+                            },
+                            "batchExecution": {
+                              "value": "@if(empty(pipeline().parameters.BatchExecution),pipeline().RunId,pipeline().parameters.BatchExecution)",
+                              "type": "Expression"
+                            }
+                          },
+                          "waitOnCompletion": true
+                        },
+                        "policy": {
+                          "secureInput": false
+                        },
+                        "name": "pl_call_pl_copyFrom_adventureWorks2022_kql",
+                        "dependsOn": []
+                      }
+                    ]
+                  }
+                ],
+                "defaultActivities": []
+              },
+              "name": "sw_based_on_source",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "fe_source_entity",
+        "dependsOn": [
+          {
+            "activity": "lk_get_data_from_copyDataConfig",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "Model": {
+        "type": "string"
+      },
+      "BatchExecution": {
+        "type": "string"
+      }
+    }
+  }
+}

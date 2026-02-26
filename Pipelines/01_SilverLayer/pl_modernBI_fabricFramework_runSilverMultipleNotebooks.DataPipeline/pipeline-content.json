@@ -1,0 +1,49 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "TridentNotebook",
+        "typeProperties": {
+          "notebookId": "9565a5b6-964e-48a8-991d-ee8fc3000087",
+          "workspaceId": "00000000-0000-0000-0000-000000000000",
+          "parameters": {
+            "modelName": {
+              "value": {
+                "value": "@pipeline().parameters.Model",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "layer": {
+              "value": {
+                "value": "@variables('Layer')",
+                "type": "Expression"
+              },
+              "type": "string"
+            }
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "NB_RunSilverNotebooks",
+        "dependsOn": []
+      }
+    ],
+    "parameters": {
+      "Model": {
+        "type": "string"
+      }
+    },
+    "variables": {
+      "Layer": {
+        "type": "String",
+        "defaultValue": "Silver"
+      }
+    }
+  }
+}

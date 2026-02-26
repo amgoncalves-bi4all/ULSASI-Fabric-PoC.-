@@ -1,0 +1,175 @@
+model: "framework"
+active: True
+dependsOn:
+    - IngestionDaily:
+        freshness: daily
+    - IngestionMonthly:
+        freshness: monthly
+raw:
+  Person:
+    sourceLocationName: adventureworks2022
+    sourceSystemType: sql
+    sourceSystemName: sql-weu-dev-adventureworks2022-01
+    sourceObjectName: Person.Person
+    sourceSelectColumns: null
+    sourceKeyColumns: null
+    destinationSystemName: lh_modernBI_fabricFramework_bronze_01
+    destinationSystemType: lakehouse
+    destinationObjectPattern: Person
+    destinationDirectoryPattern: adventureworks2022/Person/Person/
+    destinationObjectType: parquet
+    extractType: delta
+    deltaDateColumn: ModifiedDate
+    flagBlock: 0
+    flagActive: 1
+    artifactType: pipeline
+    artifactName: pl_copyFrom_adventureWorks2022_kql_yaml
+    artifactParams:
+        model: model
+        sourceObjectName: sourceObjectName
+
+  SalesOrderDetail:
+    sourceLocationName: adventureworks2022
+    sourceSystemType: sql
+    sourceSystemName: sql-weu-dev-adventureworks2022-01
+    sourceObjectName: Sales.SalesOrderDetail
+    destinationSystemName: lh_modernBI_fabricFramework_bronze_01
+    destinationSystemType: lakehouse
+    destinationObjectPattern: SalesOrderDetail
+    destinationDirectoryPattern: adventureworks2022/Sales/SalesOrderDetail/
+    destinationObjectType: parquet
+    extractType: full
+    flagBlock: 0
+    flagActive: 1
+    artifactType: pipeline
+    artifactName: pl_copyFrom_adventureWorks2022_kql_yaml
+    artifactParams:
+        model: model
+        sourceObjectName: sourceObjectName
+
+  SalesPerson:
+    sourceLocationName: adventureworks2022
+    sourceSystemType: sql
+    sourceSystemName: sql-weu-dev-adventureworks2022-01
+    sourceObjectName: Sales.SalesPerson
+    destinationSystemName: lh_modernBI_fabricFramework_bronze_01
+    destinationSystemType: lakehouse
+    destinationObjectPattern: SalesPerson
+    destinationDirectoryPattern: adventureworks2022/Sales/SalesPerson/
+    destinationObjectType: parquet
+    extractType: full
+    flagBlock: 0
+    flagActive: 1
+    artifactType: pipeline
+    artifactName: pl_copyFrom_adventureWorks2022_kql_yaml
+    artifactParams:
+        model: model
+        sourceObjectName: sourceObjectName
+
+  SalesTerritory:
+    sourceLocationName: adventureworks2022
+    sourceSystemType: sql
+    sourceSystemName: sql-weu-dev-adventureworks2022-01
+    sourceObjectName: Sales.SalesTerritory
+    destinationSystemName: lh_modernBI_fabricFramework_bronze_01
+    destinationSystemType: lakehouse
+    destinationObjectPattern: SalesTerritory
+    destinationDirectoryPattern: adventureworks2022/Sales/SalesTerritory/
+    destinationObjectType: parquet
+    extractType: full
+    flagBlock: 0
+    flagActive: 1
+    artifactType: pipeline
+    artifactName: pl_copyFrom_adventureWorks2022_kql_yaml
+    artifactParams:
+        model: model
+        sourceObjectName: sourceObjectName
+
+  Store:
+    sourceLocationName: adventureworks2022
+    sourceSystemType: sql
+    sourceSystemName: sql-weu-dev-adventureworks2022-01
+    sourceObjectName: Sales.Store
+    destinationSystemName: lh_modernBI_fabricFramework_bronze_01
+    destinationSystemType: lakehouse
+    destinationObjectPattern: Store
+    destinationDirectoryPattern: adventureworks2022/Sales/Store/
+    destinationObjectType: parquet
+    extractType: full
+    flagBlock: 0
+    flagActive: 1
+    artifactType: pipeline
+    artifactName: pl_copyFrom_adventureWorks2022_kql_yaml
+    artifactParams:
+        model: model
+        sourceObjectName: sourceObjectName
+ 
+silver:
+  Person:
+    sourceSystemName: lh_modernBI_fabricFramework_bronze_01
+    sourceLocationName: adventureworks2022
+    sourceDirectoryPattern: adventureworks2022/Person/Person/
+    sourceObjectName: Person.Person
+    keyColumns: BusinessEntityID
+    extractType: delta
+    loadType: merge
+    destinationObjectPattern: Person/Person_Silver
+    destinationDatabase: lh_modernBI_fabricFramework_silver_01
+    flagActive: 1
+    artifactType: notebook
+    artifactName: NB_Load_Silver
+    artifactParams:
+        model: model
+        sourceObjectName: objectName
+    dependsOn:
+        - raw.Person
+        - raw.SalesPerson
+
+  Store:
+    sourceSystemName: lh_modernBI_fabricFramework_bronze_01
+    sourceLocationName: adventureworks2022
+    sourceDirectoryPattern: adventureworks2022/Sales/Store/
+    sourceObjectName: Sales.Store
+    extractType: full
+    loadType: overwrite
+    destinationObjectPattern: Sales/Store_Silver
+    destinationDatabase: lh_modernBI_fabricFramework_silver_01
+    flagActive: 1
+    artifactType: notebook
+    artifactName: NB_Load_Silver
+    artifactParams:
+        model: model
+        sourceObjectName: objectName
+    dependsOn:
+        - raw.Store
+
+gold:
+  dim_store:
+    destinationObjectPattern: framework/dim_store
+    destinationDatabase: lh_modernBI_fabricFramework_gold_01
+    group: dims
+    flagActive: 1
+    artifactType: notebook
+    artifactName: NB_DIM_Store
+    dependsOn:
+        - silver.Store
+  dim_person:
+    destinationObjectPattern: framework/dim_person
+    destinationDatabase: lh_modernBI_fabricFramework_gold_01
+    group: dims
+    flagActive: 1
+    artifactType: notebook
+    artifactName: NB_DIM_Person
+    dependsOn:
+        - silver.Person
+  fact_sales:
+    destinationObjectPattern: framework/fact_sales_full
+    destinationDatabase: lh_modernBI_fabricFramework_gold_01
+    flagActive: 1
+    artifactType: notebook
+    artifactName: NB_FACT_Sales_Full
+    dependsOn:
+        - gold.dim_store
+        - gold.dim_person
+    dependsOnGroup:
+        - dims

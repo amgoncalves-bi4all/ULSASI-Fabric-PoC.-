@@ -1,0 +1,79 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "name": "sp_upd_processingDate",
+        "type": "SqlServerStoredProcedure",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.00:10:00",
+          "retry": 3,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "storedProcedureName": "[admin].[uspUpdateProcessDatesConfig]",
+          "storedProcedureParameters": {
+            "Model": {
+              "value": {
+                "value": "@pipeline().parameters.model",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "ProcessDate": {
+              "value": {
+                "value": "@pipeline().parameters.date",
+                "type": "Expression"
+              },
+              "type": "Datetime"
+            },
+            "TableName": {
+              "value": {
+                "value": "@pipeline().parameters.tableName",
+                "type": "Expression"
+              },
+              "type": "String"
+            }
+          }
+        },
+        "linkedService": {
+          "name": "408ba1dd_b66c_4e3a_9929_6d99b7d1a2ea",
+          "properties": {
+            "annotations": [],
+            "type": "DataWarehouse",
+            "typeProperties": {
+              "endpoint": "@pipeline().parameters.param_official_warehouse_connstring",
+              "artifactId": "@pipeline().parameters.param_official_warehouse_id",
+              "workspaceId": "@pipeline().parameters.param_official_workspace_id"
+            }
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "model": {
+        "type": "string"
+      },
+      "tableName": {
+        "type": "string"
+      },
+      "date": {
+        "type": "string"
+      },
+      "param_official_workspace_id": {
+        "type": "string",
+        "defaultValue": "4fc684e0-5902-419b-bf6a-9de7fc814327"
+      },
+      "param_official_warehouse_id": {
+        "type": "string",
+        "defaultValue": "46aa9f1b-8004-465e-9f2a-e8739eb84be7"
+      },
+      "param_official_warehouse_connstring": {
+        "type": "string",
+        "defaultValue": "fw33yqpjyhrefncr5lpnqy25oa-4ccmmtyclgnudp3ktxt7zakde4.datawarehouse.fabric.microsoft.com"
+      }
+    }
+  }
+}

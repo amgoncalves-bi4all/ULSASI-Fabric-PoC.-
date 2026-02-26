@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "DataPipeline",
+    "displayName": "pl_modernBI_fabricFramework_copyFromSource_kql"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "47aad839-2f37-8b13-490e-448f7b7f69d6"
+  }
+}

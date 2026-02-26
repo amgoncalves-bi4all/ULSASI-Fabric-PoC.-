@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "VariableLibrary",
+    "displayName": "vl-modernBI-fabricFramework-01"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "9be1d1f5-3ce9-929b-4065-bf4ef0cf4faa"
+  }
+}

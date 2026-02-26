@@ -1,0 +1,32 @@
+// KQL script
+// Use management commands in this script to configure your database items, such as tables, functions, materialized views, and more.
+
+
+.create-merge table copyDataLog (batchExecution:string, model:string, destinationPath:string, sourceLocationName:string, objectName:string, status:string, startDate:datetime, endDate:datetime, duration:int, rowCount:int, sourceReadCommand:string, timestamp:datetime) with (folder = "log") 
+.create-merge table processExecutionLog (model:string, batchExecution:string, processName:string, processInternalId:string, processType:string, status:string, errorMessage:string, timestamp:datetime) 
+.create-merge table datesConfig (model:string, tableName:string, scope:string, startDate:datetime, timestamp:datetime) 
+.create-or-alter function with (skipvalidation = "true") LastFailedBatchProcesses(targetModel:string) {
+    let LastBatch =
+        processExecutionLog
+        | where model == targetModel
+        | summarize batchMaxTime = max(timestamp) by model, batchExecution
+        | summarize arg_max(batchMaxTime, batchExecution) by model
+        | project model, batchExecution;
+    let LastBatchIfFailed =
+        LastBatch
+        | join kind=inner (
+            processExecutionLog
+            | where model == targetModel and tolower(status) == "failed"
+            | summarize by model, batchExecution
+        ) on model, batchExecution
+        | project model, batchExecution;    
+    // 3) Return all rows of that (last) batch if it failed; otherwise returns nothing
+    processExecutionLog
+    | where model == targetModel
+    | join kind=inner LastBatchIfFailed on model, batchExecution
+    | summarize arg_max(timestamp, *) by processName, processInternalId, batchExecution
+    | project batchExecution, processName, processInternalId,status
+}
+.create-or-alter materialized-view  lastDatesConfig on table datesConfig { datesConfig
+    | summarize arg_max(timestamp, startDate) 
+        by model, tableName, scope }

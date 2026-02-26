@@ -1,0 +1,451 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/modernBI-fabricFramework/framework-schema",
+  "title": "Modern BI Fabric Framework Configuration Schema",
+  "description": "JSON Schema for validating Modern BI Fabric Framework YAML configuration files",
+  "type": "object",
+  "required": ["model", "active"],
+  "properties": {
+    "model": {
+      "type": "string",
+      "description": "The name/identifier of the framework model"
+    },
+    "active": {
+      "type": "boolean",
+      "description": "Whether this framework configuration is active"
+    },
+    "dependsOn": {
+      "type": "array",
+      "description": "Dependencies for this framework",
+      "items": {
+        "type": "object",
+        "patternProperties": {
+          "^[a-zA-Z][a-zA-Z0-9_]*$": {
+            "type": "object",
+            "properties": {
+              "freshness": {
+                "type": "string",
+                "enum": ["daily", "weekly", "monthly", "hourly"],
+                "description": "Data freshness requirement"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "raw": {
+      "type": "object",
+      "description": "Raw layer data source configurations",
+      "patternProperties": {
+        "^[a-zA-Z][a-zA-Z0-9_]*$": {
+          "$ref": "#/definitions/rawLayerObject"
+        }
+      },
+      "additionalProperties": false
+    },
+    "silver": {
+      "type": "object",
+      "description": "Silver layer data transformation configurations",
+      "patternProperties": {
+        "^[a-zA-Z][a-zA-Z0-9_]*$": {
+          "$ref": "#/definitions/silverLayerObject"
+        }
+      },
+      "additionalProperties": false
+    },
+    "gold": {
+      "type": "object",
+      "description": "Gold layer data mart configurations",
+      "patternProperties": {
+        "^[a-zA-Z][a-zA-Z0-9_]*$": {
+          "$ref": "#/definitions/goldLayerObject"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "rawLayerObject": {
+      "type": "object",
+      "required": [
+        "sourceLocationName",
+        "sourceSystemType",
+        "sourceSystemName",
+        "sourceObjectName",
+        "destinationSystemName",
+        "destinationSystemType",
+        "destinationObjectPattern",
+        "destinationDirectoryPattern",
+        "destinationObjectType",
+        "extractType",
+        "flagBlock",
+        "flagActive",
+        "artifactType",
+        "artifactName",
+        "artifactParams"
+      ],
+      "properties": {
+        "sourceLocationName": {
+          "type": "string",
+          "description": "Name of the source location/environment"
+        },
+        "sourceSystemType": {
+          "type": "string",
+          "enum": ["sql", "file", "api", "nosql"],
+          "description": "Type of source system"
+        },
+        "sourceSystemName": {
+          "type": "string",
+          "description": "Name of the source system"
+        },
+        "sourceObjectName": {
+          "type": "string",
+          "description": "Name of the source object (table, file, etc.)"
+        },
+        "sourceSelectColumns": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "string" },
+            {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          ],
+          "description": "Columns to select from source, null for all columns"
+        },
+        "sourceKeyColumns": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "string" },
+            {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          ],
+          "description": "Key columns for the source object"
+        },
+        "destinationSystemName": {
+          "type": "string",
+          "description": "Name of the destination system"
+        },
+        "destinationSystemType": {
+          "type": "string",
+          "enum": ["lakehouse", "warehouse", "eventhouse"],
+          "description": "Type of destination system"
+        },
+        "destinationObjectPattern": {
+          "type": "string",
+          "description": "Pattern for naming destination objects"
+        },
+        "destinationDirectoryPattern": {
+          "type": "string",
+          "description": "Directory pattern for storing destination files"
+        },
+        "destinationObjectType": {
+          "type": "string",
+          "enum": ["parquet", "delta", "csv", "json"],
+          "description": "Type of destination object format"
+        },
+        "extractType": {
+          "type": "string",
+          "enum": ["full", "delta", "incremental"],
+          "description": "Type of data extraction"
+        },
+        "deltaDateColumn": {
+          "type": "string",
+          "description": "Column used for delta extraction (required when extractType is delta)"
+        },
+        "flagBlock": {
+          "type": "integer",
+          "enum": [0, 1],
+          "description": "Flag to block processing (0=not blocked, 1=blocked)"
+        },
+        "flagActive": {
+          "type": "integer",
+          "enum": [0, 1],
+          "description": "Flag for active status (0=inactive, 1=active)"
+        },
+        "artifactType": {
+          "type": "string",
+          "enum": ["pipeline", "notebook", "dataflow"],
+          "description": "Type of artifact used for processing"
+        },
+        "artifactName": {
+          "type": "string",
+          "description": "Name of the artifact"
+        },
+        "artifactParams": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z_][a-zA-Z0-9_]*$": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Mapping of source attribute names to target parameter names"
+        },
+        "artifactWorkspace": {
+          "type": "string",
+          "description": "Optional workspace name where the artifact is located. If not specified, current workspace is used"
+        }
+      },
+      "additionalProperties": false,
+      "if": {
+        "properties": { "extractType": { "const": "delta" } }
+      },
+      "then": {
+        "required": ["deltaDateColumn"]
+      }
+    },
+    "silverLayerObject": {
+      "type": "object",
+      "required": [
+        "sourceSystemName",
+        "sourceLocationName",
+        "sourceDirectoryPattern",
+        "sourceObjectName",
+        "extractType",
+        "loadType",
+        "destinationObjectPattern",
+        "destinationDatabase",
+        "flagActive",
+        "artifactType",
+        "artifactName",
+        "artifactParams"
+      ],
+      "properties": {
+        "sourceSystemName": {
+          "type": "string",
+          "description": "Name of the source system (usually from raw layer)"
+        },
+        "sourceLocationName": {
+          "type": "string",
+          "description": "Name of the source location/environment"
+        },
+        "sourceDirectoryPattern": {
+          "type": "string",
+          "description": "Directory pattern where source data is stored"
+        },
+        "sourceObjectName": {
+          "type": "string",
+          "description": "Name of the source object"
+        },
+        "keyColumns": {
+          "oneOf": [
+            { "type": "string" },
+            {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          ],
+          "description": "Key columns for the object"
+        },
+        "extractType": {
+          "type": "string",
+          "enum": ["full", "delta", "incremental"],
+          "description": "Type of data extraction"
+        },
+        "loadType": {
+          "type": "string",
+          "enum": ["overwrite", "merge", "append"],
+          "description": "Type of data loading strategy"
+        },
+        "destinationObjectPattern": {
+          "type": "string",
+          "description": "Pattern for naming destination objects"
+        },
+        "destinationDatabase": {
+          "type": "string",
+          "description": "Name of the destination database"
+        },
+        "flagActive": {
+          "type": "integer",
+          "enum": [0, 1],
+          "description": "Flag for active status (0=inactive, 1=active)"
+        },
+        "artifactType": {
+          "type": "string",
+          "enum": ["pipeline", "notebook", "dataflow"],
+          "description": "Type of artifact used for processing"
+        },
+        "artifactName": {
+          "type": "string",
+          "description": "Name of the artifact"
+        },
+        "artifactParams": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z_][a-zA-Z0-9_]*$": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Mapping of source attribute names to target parameter names"
+        },
+        "artifactWorkspace": {
+          "type": "string",
+          "description": "Optional workspace name where the artifact is located. If not specified, current workspace is used"
+        },
+        "dependsOn": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Dependencies on other objects (format: layer.objectName)"
+        },
+        "deltaProcessing": {
+          "type": "object",
+          "description": "Configuration for delta processing behavior",
+          "properties": {
+            "fullProcess": {
+              "type": "boolean",
+              "description": "Whether to process all data (true) or use date filtering (false)",
+              "default": false
+            },
+            "dateType": {
+              "type": "string",
+              "enum": ["Day", "Month", "Year"],
+              "description": "Type of date interval for filtering",
+              "default": "Day"
+            },
+            "dateUnit": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Number of date units to look back from current date",
+              "default": 1
+            },
+            "dateColumnFormat": {
+              "type": "string",
+              "enum": ["MM/dd/yyyy", "dd/MM/yyyy", "yyyy/MM/dd"],
+              "description": "Format of the date column used for filtering",
+              "default": "yyyy/MM/dd"
+            },
+            "filterColumn": {
+              "type": "string",
+              "description": "Column name to use for date filtering (required when fullProcess is false)"
+            }
+          },
+          "additionalProperties": false,
+          "if": {
+            "properties": {
+              "fullProcess": { "const": false }
+            }
+          },
+          "then": {
+            "required": ["filterColumn"]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "goldLayerObject": {
+      "type": "object",
+      "required": [
+        "destinationObjectPattern",
+        "destinationDatabase",
+        "flagActive",
+        "artifactType",
+        "artifactName"
+      ],
+      "properties": {
+        "destinationObjectPattern": {
+          "type": "string",
+          "description": "Pattern for naming destination objects"
+        },
+        "destinationDatabase": {
+          "type": "string",
+          "description": "Name of the destination database"
+        },
+        "group": {
+          "type": "string",
+          "description": "Group classification for the object (e.g., dims, facts)"
+        },
+        "flagActive": {
+          "type": "integer",
+          "enum": [0, 1],
+          "description": "Flag for active status (0=inactive, 1=active)"
+        },
+        "artifactType": {
+          "type": "string",
+          "enum": ["pipeline", "notebook", "dataflow"],
+          "description": "Type of artifact used for processing"
+        },
+        "artifactName": {
+          "type": "string",
+          "description": "Name of the artifact"
+        },
+        "artifactParams": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z_][a-zA-Z0-9_]*$": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Mapping of source attribute names to target parameter names"
+        },
+        "artifactWorkspace": {
+          "type": "string",
+          "description": "Optional workspace name where the artifact is located. If not specified, current workspace is used"
+        },
+        "dependsOn": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Dependencies on other objects (format: layer.objectName)"
+        },
+        "dependsOnGroup": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Dependencies on groups of objects"
+        },
+        "deltaProcessing": {
+          "type": "object",
+          "description": "Configuration for delta processing behavior",
+          "properties": {
+            "fullProcess": {
+              "type": "boolean",
+              "description": "Whether to process all data (true) or use date filtering (false)",
+              "default": false
+            },
+            "dateType": {
+              "type": "string",
+              "enum": ["Day", "Month", "Year"],
+              "description": "Type of date interval for filtering",
+              "default": "Day"
+            },
+            "dateUnit": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Number of date units to look back from current date",
+              "default": 1
+            },
+            "dateColumnFormat": {
+              "type": "string",
+              "enum": ["MM/dd/yyyy", "dd/MM/yyyy", "yyyy/MM/dd"],
+              "description": "Format of the date column used for filtering",
+              "default": "yyyy/MM/dd"
+            },
+            "filterColumn": {
+              "type": "string",
+              "description": "Column name to use for date filtering (required when fullProcess is false)"
+            }
+          },
+          "additionalProperties": false,
+          "if": {
+            "properties": {
+              "fullProcess": { "const": false }
+            }
+          },
+          "then": {
+            "required": ["filterColumn"]
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

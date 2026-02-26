@@ -1,0 +1,8 @@
+pyspark>=3.3.0
+PyYAML>=6.0
+fabric_common_lib
+
+[dev]
+pytest>=6.0
+black
+flake8

@@ -1,0 +1,7 @@
+CICD/Deploy-GitFlow-Original.ps1
+CICD/deploy-gitflow-original.yml
+CICD/deploy-gitflow-manual-original.yml
+CICD/CONSOLIDATION-SUMMARY.md
+CICD/deploy-gitflow-backup.yml
+CICD/deploy-gitflow-manual-backup.yml
+modernBI-fabricFramework-engineering.code-workspace

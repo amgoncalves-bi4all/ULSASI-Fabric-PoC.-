@@ -1,0 +1,165 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "name": "KQL_copyDataLog",
+        "type": "KustoQueryLanguage",
+        "dependsOn": [
+          {
+            "activity": "Set kql_Command",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.00:20:00",
+          "retry": 5,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "command": {
+            "value": "@variables('kql_command')",
+            "type": "Expression"
+          },
+          "commandTimeout": "00:05:00"
+        },
+        "linkedService": {
+          "name": "ab9f6601_ff29_457f_9098_2050e6ed5c11",
+          "properties": {
+            "annotations": [],
+            "type": "KustoDatabase",
+            "typeProperties": {
+              "workspaceId": "@pipeline().parameters.param_workspace_id",
+              "endpoint": "@pipeline().parameters.param_kusto_uri",
+              "database": "@pipeline().parameters.param_kqldatabase_id"
+            }
+          }
+        }
+      },
+      {
+        "name": "Set kql_Command",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "Set duration",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "variableName": "kql_command",
+          "value": {
+            "value": "@concat(\n    '.set-or-append copyDataLog with (folder=\"log\") <|\n\tdatatable(batchExecution: string, model: string, destinationPath: string, sourceLocationName: string, objectName: string, status: string, startDate: datetime, endDate: datetime, duration: int, rowCount: int, sourceReadCommand: string, timestamp: datetime)\n\t[\n\t\t\"',pipeline().parameters.BatchExecution,'\",\n\t\t\"',pipeline().parameters.ModelName,'\",\n\t\t\"',pipeline().parameters.DestinationPath,'\",\n\t\t\"',pipeline().parameters.SourceLocationName,'\",\n\t\t\"',pipeline().parameters.ObjectName,'\",\n\t\t\"',pipeline().parameters.Status,'\",\n\t\tdatetime(',pipeline().parameters.StartDate,'),\n\t\tdatetime(',variables('endDate'),'),\n\t\t',variables('duration'),',\n\t\t',pipeline().parameters.RowCount,',\n\t\t\"',pipeline().parameters.SourceReadCommand,'\",\n\t\tdatetime(',variables('endDate'),')\n\t]'\n)",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "Set endDate",
+        "type": "SetVariable",
+        "dependsOn": [],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "variableName": "endDate",
+          "value": {
+            "value": "@utcNow()",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "Set duration",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "Set endDate",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "variableName": "duration",
+          "value": {
+            "value": "@div(\n    sub(\n        ticks(substring(variables('endDate'), 0, 23)), \n        ticks(substring(pipeline().parameters.StartDate, 0, 23))\n    ), \n    10000000\n)",
+            "type": "Expression"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "DestinationPath": {
+        "type": "string",
+        "defaultValue": "zvzc"
+      },
+      "StartDate": {
+        "type": "string",
+        "defaultValue": "2025-07-31 13:00:00"
+      },
+      "RowCount": {
+        "type": "string",
+        "defaultValue": "1"
+      },
+      "SourceLocationName": {
+        "type": "string",
+        "defaultValue": "vafa"
+      },
+      "Status": {
+        "type": "string",
+        "defaultValue": "Success"
+      },
+      "ObjectName": {
+        "type": "string",
+        "defaultValue": "ada"
+      },
+      "SourceReadCommand": {
+        "type": "string",
+        "defaultValue": "asdfa"
+      },
+      "ModelName": {
+        "type": "string",
+        "defaultValue": "framework"
+      },
+      "BatchExecution": {
+        "type": "string",
+        "defaultValue": "zcvzdad"
+      },
+      "param_workspace_id": {
+        "type": "string"
+      },
+      "param_kusto_uri": {
+        "type": "string"
+      },
+      "param_kqldatabase_id": {
+        "type": "string"
+      }
+    },
+    "variables": {
+      "kql_command": {
+        "type": "String"
+      },
+      "endDate": {
+        "type": "String"
+      },
+      "duration": {
+        "type": "Integer",
+        "defaultValue": 0
+      }
+    }
+  }
+}

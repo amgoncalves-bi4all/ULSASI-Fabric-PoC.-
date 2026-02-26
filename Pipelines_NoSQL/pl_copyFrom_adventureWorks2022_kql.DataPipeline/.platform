@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "DataPipeline",
+    "displayName": "pl_copyFrom_adventureWorks2022_kql"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "9701a9eb-20ce-b666-4ff9-930b7cd68b10"
+  }
+}

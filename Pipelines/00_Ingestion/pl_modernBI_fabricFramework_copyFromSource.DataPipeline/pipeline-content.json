@@ -1,0 +1,162 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderStoredProcedureName": "[admin].[uspSelectCopyDataConfig]",
+            "storedProcedureParameters": {
+              "model": {
+                "type": "String",
+                "value": {
+                  "value": "@pipeline().parameters.Model",
+                  "type": "Expression"
+                }
+              }
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "92b7a071_bce1_4779_848e_5c75c861134f",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "@pipeline().parameters.param_official_warehouse_id",
+                  "endpoint": "@pipeline().parameters.param_official_warehouse_connstring",
+                  "workspaceId": "@pipeline().parameters.param_official_workspace_id"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "lk_get_data_from_copyDataConfig",
+        "dependsOn": []
+      },
+      {
+        "type": "ForEach",
+        "typeProperties": {
+          "items": {
+            "value": "@activity('lk_get_data_from_copyDataConfig').output.value",
+            "type": "Expression"
+          },
+          "activities": [
+            {
+              "type": "Switch",
+              "typeProperties": {
+                "on": {
+                  "value": "@item().sourceLocationName",
+                  "type": "Expression"
+                },
+                "cases": [
+                  {
+                    "value": "adventureworks2022",
+                    "activities": [
+                      {
+                        "type": "ExecutePipeline",
+                        "typeProperties": {
+                          "pipeline": {
+                            "referenceName": "5f91b220-7ae1-4772-a7a0-f9ca734bba55",
+                            "type": "PipelineReference"
+                          },
+                          "parameters": {
+                            "model": {
+                              "value": "@item().model",
+                              "type": "Expression"
+                            },
+                            "sourceObjectName": {
+                              "value": "@item().sourceObjectName",
+                              "type": "Expression"
+                            },
+                            "param_official_workspace_id": {
+                              "value": "@pipeline().parameters.param_official_workspace_id",
+                              "type": "Expression"
+                            },
+                            "param_official_lh_bronze_id": {
+                              "value": "@pipeline().parameters.param_official_lh_bronze_id",
+                              "type": "Expression"
+                            },
+                            "param_official_warehouse_id": {
+                              "value": "@pipeline().parameters.param_official_warehouse_id",
+                              "type": "Expression"
+                            },
+                            "param_official_warehouse_connstring": {
+                              "value": "@pipeline().parameters.param_official_warehouse_connstring",
+                              "type": "Expression"
+                            }
+                          },
+                          "waitOnCompletion": true
+                        },
+                        "policy": {
+                          "secureInput": false
+                        },
+                        "name": "pl_call_pl_copyFrom_adventureWorks2022",
+                        "dependsOn": []
+                      }
+                    ]
+                  }
+                ],
+                "defaultActivities": []
+              },
+              "name": "sw_based_on_source",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "fe_source_entity",
+        "dependsOn": [
+          {
+            "activity": "lk_get_data_from_copyDataConfig",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "Model": {
+        "type": "string"
+      },
+      "param_official_workspace_id": {
+        "type": "string",
+        "defaultValue": "4fc684e0-5902-419b-bf6a-9de7fc814327"
+      },
+      "param_official_lh_bronze_id": {
+        "type": "string",
+        "defaultValue": "082b101a-c0f9-474c-91b7-93344e39e98e"
+      },
+      "param_official_lh_silver_id": {
+        "type": "string",
+        "defaultValue": "64111f28-e0dd-4a53-a6d6-d296c78d49cf"
+      },
+      "param_official_lh_gold_id": {
+        "type": "string",
+        "defaultValue": "c2c69edc-c99a-4183-a95b-8e1cada52700"
+      },
+      "param_official_warehouse_id": {
+        "type": "string",
+        "defaultValue": "46aa9f1b-8004-465e-9f2a-e8739eb84be7"
+      },
+      "param_official_warehouse_connstring": {
+        "type": "string",
+        "defaultValue": "fw33yqpjyhrefncr5lpnqy25oa-4ccmmtyclgnudp3ktxt7zakde4.datawarehouse.fabric.microsoft.com"
+      }
+    }
+  }
+}

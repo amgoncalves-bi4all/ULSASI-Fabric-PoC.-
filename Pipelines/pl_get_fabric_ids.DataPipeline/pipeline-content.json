@@ -1,0 +1,510 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "name": "Get current Workspace",
+        "type": "WebActivity",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "method": "GET",
+          "headers": {},
+          "relativeUrl": {
+            "value": "@concat('/workspaces/', pipeline().DataFactory)",
+            "type": "Expression"
+          }
+        },
+        "externalReferences": {
+          "connection": "b03b482e-90ea-4aeb-8a57-a51b153d27eb"
+        }
+      },
+      {
+        "name": "If current workspace is official",
+        "type": "IfCondition",
+        "dependsOn": [
+          {
+            "activity": "Get current Workspace",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "typeProperties": {
+          "expression": {
+            "value": "@if(startswith(activity('Get current Workspace').output.displayName,pipeline().parameters.param_ws_official_prefix), bool(1), bool(0))",
+            "type": "Expression"
+          },
+          "ifFalseActivities": [
+            {
+              "name": "Get all Workspaces",
+              "type": "WebActivity",
+              "dependsOn": [],
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureOutput": false,
+                "secureInput": false
+              },
+              "typeProperties": {
+                "method": "GET",
+                "headers": {},
+                "relativeUrl": "/workspaces"
+              },
+              "externalReferences": {
+                "connection": "b03b482e-90ea-4aeb-8a57-a51b153d27eb"
+              }
+            },
+            {
+              "name": "Set var_official_workspace_id",
+              "type": "SetVariable",
+              "dependsOn": [
+                {
+                  "activity": "Filter get official workspace ID",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ],
+              "policy": {
+                "secureOutput": false,
+                "secureInput": false
+              },
+              "typeProperties": {
+                "variableName": "var_official_workspace_id",
+                "value": {
+                  "value": "@activity('Filter get official workspace ID').output.value[0].id",
+                  "type": "Expression"
+                }
+              }
+            },
+            {
+              "name": "Filter get official workspace ID",
+              "type": "Filter",
+              "dependsOn": [
+                {
+                  "activity": "Get all Workspaces",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ],
+              "typeProperties": {
+                "items": {
+                  "value": "@activity('Get all Workspaces').output.value",
+                  "type": "Expression"
+                },
+                "condition": {
+                  "value": "@equals(item().displayName, concat(pipeline().parameters.param_ws_official_prefix, '-dev'))",
+                  "type": "Expression"
+                }
+              }
+            }
+          ],
+          "ifTrueActivities": [
+            {
+              "name": "Set var_official_workspace_id - current",
+              "type": "SetVariable",
+              "dependsOn": [],
+              "policy": {
+                "secureOutput": false,
+                "secureInput": false
+              },
+              "typeProperties": {
+                "variableName": "var_official_workspace_id",
+                "value": {
+                  "value": "@activity('Get current Workspace').output.id",
+                  "type": "Expression"
+                }
+              }
+            },
+            {
+              "name": "Set var_is_current_ws_official",
+              "type": "SetVariable",
+              "dependsOn": [],
+              "policy": {
+                "secureOutput": false,
+                "secureInput": false
+              },
+              "typeProperties": {
+                "variableName": "var_is_current_ws_official",
+                "value": true
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "Get all Lakehouses",
+        "type": "WebActivity",
+        "dependsOn": [
+          {
+            "activity": "If current workspace is official",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "method": "GET",
+          "headers": {},
+          "relativeUrl": {
+            "value": "@concat('workspaces/', variables('var_official_workspace_id'), '/lakehouses')",
+            "type": "Expression"
+          }
+        },
+        "externalReferences": {
+          "connection": "b03b482e-90ea-4aeb-8a57-a51b153d27eb"
+        }
+      },
+      {
+        "name": "Output variables",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "Set var_official_lh_bronze_id",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          },
+          {
+            "activity": "Set var_official_lh_silver_id",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          },
+          {
+            "activity": "Set var_official_lh_gold_id",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          },
+          {
+            "activity": "Set var_official_warehouse_id",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          },
+          {
+            "activity": "Set var_official_warehouse_connString",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "variableName": "pipelineReturnValue",
+          "value": [
+            {
+              "key": "var_official_workspace_id",
+              "value": {
+                "type": "Expression",
+                "content": "@variables('var_official_workspace_id')"
+              }
+            },
+            {
+              "key": "var_official_lh_bronze_id",
+              "value": {
+                "type": "Expression",
+                "content": "@variables('var_official_lh_bronze_id')"
+              }
+            },
+            {
+              "key": "var_official_lh_silver_id",
+              "value": {
+                "type": "Expression",
+                "content": "@variables('var_official_lh_silver_id')"
+              }
+            },
+            {
+              "key": "var_official_lh_gold_id",
+              "value": {
+                "type": "Expression",
+                "content": "@variables('var_official_lh_gold_id')"
+              }
+            },
+            {
+              "key": "var_official_warehouse_id",
+              "value": {
+                "type": "Expression",
+                "content": "@variables('var_official_warehouse_id')"
+              }
+            },
+            {
+              "key": "var_official_warehouse_connstring",
+              "value": {
+                "type": "Expression",
+                "content": "@variables('var_official_warehouse_connstring')"
+              }
+            }
+          ],
+          "setSystemVariable": true
+        }
+      },
+      {
+        "name": "Filter get lh_bronze ID",
+        "type": "Filter",
+        "dependsOn": [
+          {
+            "activity": "Get all Lakehouses",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "typeProperties": {
+          "items": {
+            "value": "@activity('Get all Lakehouses').output.value",
+            "type": "Expression"
+          },
+          "condition": {
+            "value": "@contains(item().displayName, 'bronze')",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "Set var_official_lh_bronze_id",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "Filter get lh_bronze ID",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "variableName": "var_official_lh_bronze_id",
+          "value": {
+            "value": "@activity('Filter get lh_bronze ID').output.value[0].id",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "Filter get lh_silver ID",
+        "type": "Filter",
+        "dependsOn": [
+          {
+            "activity": "Get all Lakehouses",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "typeProperties": {
+          "items": {
+            "value": "@activity('Get all Lakehouses').output.value",
+            "type": "Expression"
+          },
+          "condition": {
+            "value": "@contains(item().displayName, 'silver')",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "Set var_official_lh_silver_id",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "Filter get lh_silver ID",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "variableName": "var_official_lh_silver_id",
+          "value": {
+            "value": "@activity('Filter get lh_silver ID').output.value[0].id",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "Filter get lh_gold ID",
+        "type": "Filter",
+        "dependsOn": [
+          {
+            "activity": "Get all Lakehouses",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "typeProperties": {
+          "items": {
+            "value": "@activity('Get all Lakehouses').output.value",
+            "type": "Expression"
+          },
+          "condition": {
+            "value": "@contains(item().displayName, 'gold')",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "Set var_official_lh_gold_id",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "Filter get lh_gold ID",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "variableName": "var_official_lh_gold_id",
+          "value": {
+            "value": "@activity('Filter get lh_gold ID').output.value[0].id",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "Get all warehouses",
+        "type": "WebActivity",
+        "dependsOn": [
+          {
+            "activity": "If current workspace is official",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "method": "GET",
+          "headers": {},
+          "relativeUrl": {
+            "value": "@concat('workspaces/', variables('var_official_workspace_id'), '/Warehouses')",
+            "type": "Expression"
+          }
+        },
+        "externalReferences": {
+          "connection": "b03b482e-90ea-4aeb-8a57-a51b153d27eb"
+        }
+      },
+      {
+        "name": "Set var_official_warehouse_id",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "Get all warehouses",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "variableName": "var_official_warehouse_id",
+          "value": {
+            "value": "@activity('Get all warehouses').output.value[0].id",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "Set var_official_warehouse_connString",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "Get all warehouses",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "variableName": "var_official_warehouse_connstring",
+          "value": {
+            "value": "@activity('Get all warehouses').output.value[0].properties.connectionString",
+            "type": "Expression"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "param_ws_official_prefix": {
+        "type": "string",
+        "defaultValue": "modernBI-fabricFramework-engineering"
+      }
+    },
+    "variables": {
+      "var_is_current_ws_official": {
+        "type": "Boolean",
+        "defaultValue": false
+      },
+      "var_official_workspace_id": {
+        "type": "String"
+      },
+      "var_official_lh_bronze_id": {
+        "type": "String"
+      },
+      "var_official_lh_silver_id": {
+        "type": "String"
+      },
+      "var_official_lh_gold_id": {
+        "type": "String"
+      },
+      "var_current_workspace_id": {
+        "type": "String"
+      },
+      "var_official_warehouse_id": {
+        "type": "String"
+      },
+      "test": {
+        "type": "String"
+      },
+      "var_official_warehouse_connstring": {
+        "type": "String"
+      }
+    }
+  }
+}

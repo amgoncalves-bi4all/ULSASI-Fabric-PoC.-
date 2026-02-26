@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Eventhouse",
+    "displayName": "eh_modernBI_fabricFramework_01",
+    "description": "eh_modernBI_fabricFramework_01"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "fcde0a92-9ef9-b5f9-41e2-3f398d9b7c0f"
+  }
+}

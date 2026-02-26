@@ -1,0 +1,200 @@
+{
+  "project": {
+    "name": "modernBI-fabricFramework-engineering",
+    "description": "Modern BI Fabric Framework - Metadata-driven Microsoft Fabric solution implementing medallion architecture",
+    "version": "1.0.0"
+  },
+  "gitFlow": {
+    "enabled": true,
+    "strategy": "GitFlow",
+    "mainBranch": "main",
+    "developBranch": "develop",
+    "testBranch": "test", 
+    "productionBranch": "production",
+    "featureBranchPrefix": "feature/",
+    "hotfixBranchPrefix": "hotfix/",
+    "releaseBranchPrefix": "release/",
+    "primaryBranches": {
+      "main": "development",
+      "test": "test", 
+      "prod": "production"
+    },
+    "pipelineTriggeredBranches": {
+      "test": "test",
+      "prod": "production"
+    },
+    "directGitBranches": {
+      "main": "development"
+    },
+    "gitIntegration": {
+      "organizationName": "$(System.TeamProject)",
+      "projectName": "$(System.TeamProject)",
+      "repositoryName": "$(Build.Repository.Name)"
+    }
+  },
+  "environments": {
+    "development": {
+      "displayName": "Development Environment",
+      "workspaceNamePattern": "{projectName}-dev",
+      "workspaceId": "DEV_WORKSPACE_ID",
+      "sourceBranch": "refs/heads/main",
+      "deploymentBranch": "main",
+      "branch": "main",
+      "primaryBranch": "main",
+      "directGitConnection": true,
+      "pipelineDeployment": false,
+      "autoDeployOnPush": false,
+      "requiresApproval": false,
+      "conflictResolution": "PreferRemote",
+      "workspaceIdVariable": "DEV_WORKSPACE_ID",
+      "lakehouseIdVariables": {
+        "bronze": "DEV_BRONZE_LAKEHOUSE_ID",
+        "silver": "DEV_SILVER_LAKEHOUSE_ID", 
+        "gold": "DEV_GOLD_LAKEHOUSE_ID"
+      }
+    },
+    "test": {
+      "displayName": "Test Environment",
+      "workspaceNamePattern": "{projectName}-test",
+      "workspaceId": "TEST_WORKSPACE_ID",
+      "sourceBranch": "refs/heads/test",
+      "deploymentBranch": "test",
+      "branch": "test",
+      "primaryBranch": "test",
+      "directGitConnection": false,
+      "pipelineDeployment": true,
+      "autoDeployOnPush": true,
+      "requiresApproval": false,
+      "conflictResolution": "PreferRemote",
+      "workspaceIdVariable": "TEST_WORKSPACE_ID",
+      "lakehouseIdVariables": {
+        "bronze": "TEST_BRONZE_LAKEHOUSE_ID",
+        "silver": "TEST_SILVER_LAKEHOUSE_ID",
+        "gold": "TEST_GOLD_LAKEHOUSE_ID"
+      }
+    },
+    "production": {
+      "displayName": "Production Environment",
+      "workspaceNamePattern": "{projectName}-prod",
+      "workspaceId": "PROD_WORKSPACE_ID",
+      "sourceBranch": "refs/heads/production",
+      "deploymentBranch": "production",
+      "branch": "prod",
+      "primaryBranch": "prod",
+      "directGitConnection": false,
+      "pipelineDeployment": true,
+      "autoDeployOnPush": true,
+      "requiresApproval": true,
+      "conflictResolution": "PreferRemote",
+      "workspaceIdVariable": "PROD_WORKSPACE_ID",
+      "lakehouseIdVariables": {
+        "bronze": "PROD_BRONZE_LAKEHOUSE_ID",
+        "silver": "PROD_SILVER_LAKEHOUSE_ID",
+        "gold": "PROD_GOLD_LAKEHOUSE_ID"
+      }
+    }
+  },
+  "azureDevOps": {
+    "servicePrincipalGroup": "FabricServicePrincipal",
+    "workspaceVariableGroup": "FabricVariables",
+    "pipelineTemplateRepository": "fabric-gitflow-templates",
+    "scriptsPath": "CICD/scripts"
+  },
+  "deployment": {
+    "defaultConflictResolution": "PreferRemote",
+    "enableForceUpdate": false,
+    "timeoutMinutes": 30,
+    "retryAttempts": 3,
+    "validatePostDeployment": true
+  },
+  "notifications": {
+    "enableSlack": false,
+    "slackWebhook": "",
+    "enableEmail": true,
+    "emailRecipients": [
+      "rfgoncalves@bi4all.pt"
+    ]
+  },
+  "artifactTypes": {
+    "notebooks": {
+      "extensions": [".py"],
+      "searchPatterns": [
+        "\"workspaceId\":\\s*\"[a-f0-9-]{36}\"",
+        "abfss://[a-f0-9-]{36}@onelake\\.dfs\\.fabric\\.microsoft\\.com/[a-f0-9-]{36}",
+        "workspace_id\\s*=\\s*[\"'][a-f0-9-]{36}[\"']",
+        "lakehouse_id\\s*=\\s*[\"'][a-f0-9-]{36}[\"']"
+      ]
+    },
+    "pipelines": {
+      "extensions": [".json"],
+      "searchPatterns": [
+        "\"workspaceId\":\\s*\"[a-f0-9-]{36}\"",
+        "\"lakehouseId\":\\s*\"[a-f0-9-]{36}\"",
+        "\"warehouseId\":\\s*\"[a-f0-9-]{36}\""
+      ]
+    },
+    "shortcuts": {
+      "extensions": [".json"],
+      "searchPatterns": [
+        "\"workspaceId\":\\s*\"[a-f0-9-]{36}\"",
+        "\"itemId\":\\s*\"[a-f0-9-]{36}\""
+      ]
+    },
+    "configurations": {
+      "extensions": [".yml", ".yaml"],
+      "searchPatterns": [
+        "abfss://[a-f0-9-]{36}@onelake\\.dfs\\.fabric\\.microsoft\\.com/[a-f0-9-]{36}"
+      ]
+    }
+  },
+  "exclusionPatterns": [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/temp/**",
+    "**/*.log",
+    "**/CICD/**"
+  ],
+  "smokeTests": {
+    "notebooks": [
+      "Notebooks/Test/SmokeTest_Basic.Notebook",
+      "Notebooks/Test/SmokeTest_Configuration.Notebook",
+      "Notebooks/Test/SmokeTest_DataFlow.Notebook"
+    ],
+    "timeoutMinutes": 30
+  },
+  "templateConfiguration": {
+    "templateVersion": "1.0.0",
+    "lastUpdated": "2025-11-11",
+    "compatibleWithTemplates": [
+      "deploy-gitflow-stage.yml",
+      "deploy-gitflow-manual-stage.yml"
+    ],
+    "requiredVariableGroups": [
+      "FabricServicePrincipal",
+      "FabricVariables"
+    ],
+    "requiredVariables": {
+      "servicePrincipal": [
+        "FABRIC_CLIENT_ID",
+        "FABRIC_CLIENT_SECRET",
+        "FABRIC_TENANT_ID"
+      ],
+      "workspaces": [
+        "DEV_WORKSPACE_ID",
+        "TEST_WORKSPACE_ID",
+        "PROD_WORKSPACE_ID"
+      ],
+      "lakehouses": [
+        "DEV_BRONZE_LAKEHOUSE_ID",
+        "DEV_SILVER_LAKEHOUSE_ID",
+        "DEV_GOLD_LAKEHOUSE_ID",
+        "TEST_BRONZE_LAKEHOUSE_ID",
+        "TEST_SILVER_LAKEHOUSE_ID",
+        "TEST_GOLD_LAKEHOUSE_ID",
+        "PROD_BRONZE_LAKEHOUSE_ID",
+        "PROD_SILVER_LAKEHOUSE_ID",
+        "PROD_GOLD_LAKEHOUSE_ID"
+      ]
+    }
+  }
+}

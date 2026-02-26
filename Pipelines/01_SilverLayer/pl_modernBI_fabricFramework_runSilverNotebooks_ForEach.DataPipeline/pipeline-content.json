@@ -1,0 +1,128 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "name": "lk_get_data_from_silverGoldConfig",
+        "type": "Lookup",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderStoredProcedureName": "[admin].[uspSelectSilverGoldConfig]",
+            "storedProcedureParameters": {
+              "model": {
+                "type": "String",
+                "value": {
+                  "value": "@pipeline().parameters.Model",
+                  "type": "Expression"
+                }
+              },
+              "layer": {
+                "type": "String",
+                "value": {
+                  "value": "@variables('Layer')",
+                  "type": "Expression"
+                }
+              }
+            },
+            "queryTimeout": "02:00:00",
+            "partitionOption": "None"
+          },
+          "firstRowOnly": false,
+          "datasetSettings": {
+            "annotations": [],
+            "linkedService": {
+              "name": "dw_modernBI_fabricFramework_01",
+              "properties": {
+                "annotations": [],
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "endpoint": "fw33yqpjyhrefncr5lpnqy25oa-4ccmmtyclgnudp3ktxt7zakde4.datawarehouse.fabric.microsoft.com",
+                  "artifactId": "46aa9f1b-8004-465e-9f2a-e8739eb84be7",
+                  "workspaceId": "4fc684e0-5902-419b-bf6a-9de7fc814327"
+                }
+              }
+            },
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "typeProperties": {
+              "schema": "admin",
+              "table": "copyDataConfig"
+            }
+          }
+        }
+      },
+      {
+        "name": "fe_object",
+        "type": "ForEach",
+        "dependsOn": [
+          {
+            "activity": "lk_get_data_from_silverGoldConfig",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "typeProperties": {
+          "items": {
+            "value": "@activity('lk_get_data_from_silverGoldConfig').output.value",
+            "type": "Expression"
+          },
+          "activities": [
+            {
+              "name": "If NotebookIsEmpty",
+              "type": "IfCondition",
+              "dependsOn": [],
+              "typeProperties": {
+                "expression": {
+                  "value": "@if(empty(item().notebookName),true,false)",
+                  "type": "Expression"
+                },
+                "ifFalseActivities": [
+                  {
+                    "name": "nb_runNotebook",
+                    "type": "TridentNotebook",
+                    "dependsOn": [],
+                    "policy": {
+                      "timeout": "0.12:00:00",
+                      "retry": 0,
+                      "retryIntervalInSeconds": 30,
+                      "secureOutput": false,
+                      "secureInput": false
+                    },
+                    "typeProperties": {
+                      "notebookId": {
+                        "value": "@item().notebookName",
+                        "type": "Expression"
+                      },
+                      "workspaceId": "4fc684e0-5902-419b-bf6a-9de7fc814327"
+                    }
+                  }
+                ],
+                "ifTrueActivities": []
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {
+      "Model": {
+        "type": "string"
+      }
+    },
+    "variables": {
+      "Layer": {
+        "type": "String",
+        "defaultValue": "Silver"
+      }
+    }
+  }
+}

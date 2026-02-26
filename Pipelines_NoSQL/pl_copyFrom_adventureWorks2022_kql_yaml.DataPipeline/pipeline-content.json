@@ -1,0 +1,399 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Copy",
+        "typeProperties": {
+          "source": {
+            "type": "AzureSqlSource",
+            "sqlReaderQuery": {
+              "value": "@variables('sourceReadCommand')",
+              "type": "Expression"
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00",
+            "datasetSettings": {
+              "type": "AzureSqlTable",
+              "typeProperties": {
+                "database": "sql-weu-dev-adventureworks2022-01"
+              },
+              "schema": [],
+              "externalReferences": {
+                "connection": "a5d8d3dc-e298-47d6-974d-48c1562eab4b"
+              },
+              "annotations": []
+            }
+          },
+          "sink": {
+            "type": "ParquetSink",
+            "formatSettings": {
+              "type": "ParquetWriteSettings",
+              "enableVertiParquet": true
+            },
+            "storeSettings": {
+              "type": "LakehouseWriteSettings"
+            },
+            "datasetSettings": {
+              "type": "Parquet",
+              "typeProperties": {
+                "location": {
+                  "type": "LakehouseLocation",
+                  "folderPath": {
+                    "value": "@variables('destinationDirectoryName')",
+                    "type": "Expression"
+                  },
+                  "fileName": {
+                    "value": "@variables('destinationFileName')",
+                    "type": "Expression"
+                  }
+                },
+                "compressionCodec": "snappy"
+              },
+              "schema": [],
+              "linkedService": {
+                "name": "d7ad03ed_c141_4d8f_a157_71ebcb2bb1e4",
+                "properties": {
+                  "type": "Lakehouse",
+                  "typeProperties": {
+                    "artifactId": "@pipeline().parameters.param_lh_bronze_id",
+                    "workspaceId": "@pipeline().parameters.param_workspace_id",
+                    "rootFolder": "Files"
+                  },
+                  "annotations": []
+                }
+              },
+              "annotations": []
+            }
+          },
+          "translator": {
+            "type": "TabularTranslator",
+            "typeConversion": true,
+            "typeConversionSettings": {
+              "allowDataTruncation": true,
+              "treatBooleanAsNumber": false
+            }
+          },
+          "enableStaging": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "cd_copySQLTable",
+        "dependsOn": [
+          {
+            "activity": "DestinationDirectoryName",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          },
+          {
+            "activity": "DestinationFileName",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          },
+          {
+            "activity": "SourceReadCommand",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ExecutePipeline",
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "1e80a5d5-2619-ad48-4448-8b9f301de1cc",
+            "type": "PipelineReference"
+          },
+          "parameters": {
+            "DestinationPath": {
+              "value": "@concat(variables('destinationDirectoryName'),variables('destinationFileName'))",
+              "type": "Expression"
+            },
+            "StartDate": {
+              "value": "@variables('startDate')",
+              "type": "Expression"
+            },
+            "RowCount": {
+              "value": "@activity('cd_copySQLTable').output.rowsCopied",
+              "type": "Expression"
+            },
+            "SourceLocationName": {
+              "value": "@json(variables('strCopyDataConfig')).sourceLocationName",
+              "type": "Expression"
+            },
+            "Status": {
+              "value": "@activity('cd_copySQLTable').output.executionDetails[0].status",
+              "type": "Expression"
+            },
+            "ObjectName": {
+              "value": "@json(variables('strCopyDataConfig')).sourceObjectName",
+              "type": "Expression"
+            },
+            "SourceReadCommand": {
+              "value": "@json(variables('strCopyDataConfig')).sourceReadCommand",
+              "type": "Expression"
+            },
+            "ModelName": {
+              "value": "@pipeline().parameters.model",
+              "type": "Expression"
+            },
+            "BatchExecution": {
+              "value": "@pipeline().parameters.batchExecution",
+              "type": "Expression"
+            },
+            "param_workspace_id": {
+              "value": "@pipeline().parameters.param_workspace_id",
+              "type": "Expression"
+            },
+            "param_kusto_uri": {
+              "value": "@pipeline().parameters.param_kusto_uri",
+              "type": "Expression"
+            },
+            "param_kqldatabase_id": {
+              "value": "@pipeline().parameters.param_kqldatabase_id",
+              "type": "Expression"
+            }
+          },
+          "waitOnCompletion": true
+        },
+        "policy": {
+          "secureInput": false
+        },
+        "name": "PL_SP_CopyDataLog_kql",
+        "dependsOn": [
+          {
+            "activity": "cd_copySQLTable",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "destinationDirectoryName",
+          "value": {
+            "value": "@json(variables('strCopyDataConfig')).DestinationDirectoryPattern",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "DestinationDirectoryName",
+        "dependsOn": [
+          {
+            "activity": "StartDate",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "destinationFileName",
+          "value": {
+            "value": "@json(variables('strCopyDataConfig')).DestinationObjectPattern",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "DestinationFileName",
+        "dependsOn": [
+          {
+            "activity": "StartDate",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "startDate",
+          "value": {
+            "value": "@utcNow()",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "StartDate",
+        "dependsOn": [
+          {
+            "activity": "Set strCopyDataConfig",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "KustoQueryLanguage",
+        "typeProperties": {
+          "command": {
+            "value": "@concat(\n    '.set-or-append datesConfig <|\n\tdatatable(model: string, tableName: string, scope: string, startDate: datetime, timestamp: datetime)\n\t[\n\t\t\"',pipeline().parameters.model,'\",\n\t\t\"',pipeline().parameters.sourceObjectName,'\",\n\t\t\"Extraction\",\n\t\tdatetime(',variables('startDate'),'),\n\t\tnow()\n\t]'\n)",
+            "type": "Expression"
+          },
+          "commandTimeout": "00:05:00"
+        },
+        "linkedService": {
+          "name": "ffb6269f_d132_4c8f_b5f7_16adc8ce5916",
+          "properties": {
+            "type": "KustoDatabase",
+            "typeProperties": {
+              "endpoint": "@pipeline().parameters.param_kusto_uri",
+              "workspaceId": "@pipeline().parameters.param_workspace_id",
+              "database": "@pipeline().parameters.param_kqldatabase_id"
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.00:20:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "KQL_datesConfig",
+        "dependsOn": [
+          {
+            "activity": "PL_SP_CopyDataLog_kql",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "sourceReadCommand",
+          "value": {
+            "value": "@json(variables('strCopyDataConfig')).sourceReadCommand",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "SourceReadCommand",
+        "dependsOn": [
+          {
+            "activity": "StartDate",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "strCopyDataConfig",
+          "value": {
+            "value": "@pipeline().parameters.copyDataConfig",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Set strCopyDataConfig",
+        "description": "To test manually change the type of parameter copyDataConfig to Object and use this expression:\n@string(pipeline().parameters.copyDataConfig)\n",
+        "dependsOn": []
+      }
+    ],
+    "parameters": {
+      "model": {
+        "type": "string",
+        "defaultValue": "framework"
+      },
+      "sourceObjectName": {
+        "type": "string",
+        "defaultValue": "Sales.Store"
+      },
+      "batchExecution": {
+        "type": "string",
+        "defaultValue": "asdfasdfads"
+      },
+      "copyDataConfig": {
+        "type": "string",
+        "defaultValue": {
+          "model": "framework",
+          "sourceSystemName": "sql-weu-dev-adventureworks2022-01",
+          "sourceSystemType": "sql",
+          "sourceLocationName": "adventureworks2022",
+          "sourceObjectName": "Sales.Store",
+          "sourceSelectColumns": null,
+          "sourceKeyColumns": null,
+          "destinationSystemName": "lh_modernBI_fabricFramework_bronze_01",
+          "destinationSystemType": "lakehouse",
+          "destinationObjectPattern": "Store_20251029_1237.parquet",
+          "destinationDirectoryPattern": "adventureworks2022/Sales/Store/2025/10/29/12/37/",
+          "destinationObjectType": "parquet",
+          "extractType": "full",
+          "deltaStartDate": null,
+          "deltaDateColumn": null,
+          "flagBlock": 0,
+          "flagActive": 1,
+          "sourceReadCommand": "SELECT * FROM Sales.Store",
+          "startDate": "2025-10-29 12:37:05"
+        }
+      },
+      "param_workspace_id": {
+        "type": "string",
+        "defaultValue": "4fc684e0-5902-419b-bf6a-9de7fc814327"
+      },
+      "param_lh_bronze_id": {
+        "type": "string",
+        "defaultValue": "082b101a-c0f9-474c-91b7-93344e39e98e"
+      },
+      "param_kqldatabase_id": {
+        "type": "string",
+        "defaultValue": "8d9b7c0f-3f39-41e2-b5f9-9ef9fcde0a92"
+      },
+      "param_kusto_uri": {
+        "type": "string",
+        "defaultValue": "https://trd-jpgqmvnphk0qyjp55m.z2.kusto.fabric.microsoft.com"
+      }
+    },
+    "variables": {
+      "startDate": {
+        "type": "String"
+      },
+      "destinationDirectoryName": {
+        "type": "String"
+      },
+      "destinationFileName": {
+        "type": "String"
+      },
+      "sourceReadCommand": {
+        "type": "String"
+      },
+      "strCopyDataConfig": {
+        "type": "String"
+      }
+    }
+  }
+}

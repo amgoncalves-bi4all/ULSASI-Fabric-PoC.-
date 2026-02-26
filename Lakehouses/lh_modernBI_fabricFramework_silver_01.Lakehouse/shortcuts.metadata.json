@@ -1,0 +1,67 @@
+[
+  {
+    "name": "copyDataLog",
+    "path": "/Tables/log",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/log/copyDataLog",
+        "itemId": "57857eb5-61bc-4297-bc48-48ec481f33d8",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "artifactType": "Warehouse"
+      }
+    }
+  },
+  {
+    "name": "silverGoldDependency",
+    "path": "/Tables/config",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/admin/silverGoldDependency",
+        "itemId": "57857eb5-61bc-4297-bc48-48ec481f33d8",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "artifactType": "Warehouse"
+      }
+    }
+  },
+  {
+    "name": "silverGoldConfig",
+    "path": "/Tables/config",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/admin/silverGoldConfig",
+        "itemId": "57857eb5-61bc-4297-bc48-48ec481f33d8",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "artifactType": "Warehouse"
+      }
+    }
+  },
+  {
+    "name": "processDatesConfig",
+    "path": "/Tables/config",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/admin/processDatesConfig",
+        "itemId": "57857eb5-61bc-4297-bc48-48ec481f33d8",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "artifactType": "Warehouse"
+      }
+    }
+  },
+  {
+    "name": "copyDataConfig",
+    "path": "/Tables/config",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/admin/copyDataConfig",
+        "itemId": "57857eb5-61bc-4297-bc48-48ec481f33d8",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "artifactType": "Warehouse"
+      }
+    }
+  }
+]

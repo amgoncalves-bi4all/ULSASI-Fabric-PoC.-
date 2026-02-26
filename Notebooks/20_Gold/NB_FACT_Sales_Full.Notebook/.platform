@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "NB_FACT_Sales_Full",
+    "description": "Example notebook for full loading a fact table"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "b3011108-7e83-4f78-94d3-3bd0e9b0ffe5"
+  }
+}

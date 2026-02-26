@@ -1,0 +1,169 @@
+Metadata-Version: 2.4
+Name: yaml_orchestrator_lib
+Version: 0.1.0
+Summary: YAML-based orchestration library for Microsoft Fabric workflows
+Author-email: BI4ALL <rfgoncalves@bi4all.pt>
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: pyspark>=3.3.0
+Requires-Dist: PyYAML>=6.0
+Requires-Dist: fabric_common_lib
+Provides-Extra: dev
+Requires-Dist: pytest>=6.0; extra == "dev"
+Requires-Dist: black; extra == "dev"
+Requires-Dist: flake8; extra == "dev"
+
+# YAML Orchestrator Library
+
+A Python library for YAML-based orchestration of Microsoft Fabric workflows. This library extracts and packages the core orchestration functions from the `NB_Read_ConfigYAML` notebook for reusable library usage.
+
+## Overview
+
+This library provides functions for:
+- Loading and processing YAML configuration files
+- Building DAG (Directed Acyclic Graph) structures from YAML configs
+- Managing execution status and dependencies
+- Integration with Microsoft Fabric KQL/Eventhouse for logging
+- Resume functionality for failed pipeline executions
+
+## Installation
+
+```bash
+# Install in development mode
+pip install -e .
+
+# Or build wheel
+python -m build
+```
+
+## Usage
+
+```python
+import yaml_orchestrator_lib as orchestrator
+
+# Configure Fabric globals (required for Fabric integration)
+orchestrator.configure_fabric_globals(notebookutils, mssparkutils)
+
+# Load YAML configuration
+config = orchestrator.load_yaml_config("path/to/config.yml")
+
+# Generate DAG from configuration
+dag = orchestrator.generate_dag_from_config(
+    config=config,
+    model="framework",
+    workspace_id="your_workspace_id",
+    bronze_lakehouse_id="your_bronze_lakehouse_id",
+    log_eventhouse_id="your_eventhouse_id",
+    kusto_uri="your_kusto_uri",
+    sections=["raw", "silver", "gold"],  # Optional: customize processing sections
+    timeoutInSeconds=43200,              # Optional: DAG timeout (default: 43200)
+    concurrency=4                        # Optional: max concurrent notebooks (default: 4)
+)
+
+# Execute the DAG using Fabric's notebook utilities
+if notebookutils.notebook.validateDAG(dag):
+    notebookutils.notebook.runMultiple(dag, {"displayDAGViaGraphviz": False})
+```
+
+## Advanced Usage
+
+```python
+# Generate DAG with custom configuration
+dag = orchestrator.generate_dag_from_config(
+    config=config,
+    model="framework",
+    model_reset=False,                    # Set to True to ignore previous execution status
+    workspace_id="your_workspace_id",
+    bronze_lakehouse_id="your_bronze_lakehouse_id",
+    log_kqldatabase_id="your_kqldatabase_id",
+    kusto_uri="your_kusto_uri",
+    sections=["raw", "silver"],          # Process only specific sections
+    timeoutInSeconds=21600,               # 6 hours timeout instead of default 12 hours
+    concurrency=8                         # Higher concurrency for faster execution
+)
+
+# The generated DAG will have:
+# - Custom timeout per notebook cell (9000 seconds default, configurable in ProcessEntryWithWrapper)
+# - Overall DAG timeout as specified (timeoutInSeconds parameter)
+# - Maximum concurrent notebook executions as specified (concurrency parameter)
+```
+
+## Functions
+
+### Core Functions
+
+- `configure_fabric_globals(notebookutils, mssparkutils)` - Configure Fabric runtime context
+- `load_yaml_config(yaml_file_path)` - Load and parse YAML configuration from lakehouse
+- `generate_dag_from_config(config, model, sections=None, timeoutInSeconds=43200, concurrency=4, ...)` - Generate complete DAG from YAML configuration with customizable sections, timeout, and concurrency settings
+
+### Configuration Processing Functions
+
+- `GetLastModelExecution(model)` - Get last execution details from KQL for resume functionality
+- `GetStartDates(model, scope)` - Get processing start dates from KQL
+- `BuildGroupDependencyMap(config)` - Build dependency mapping for grouped activities
+- `ProcessEntryWithWrapper(name, entry, ..., timeoutPerCellInSeconds=9000)` - Process individual configuration entries into DAG activities with configurable cell timeout
+
+### Utility Functions
+
+- `GetCopyDataConfig(entry, ...)` - Generate copy data configuration for pipeline activities
+
+## YAML Configuration Format
+
+The library expects YAML configurations with the following structure:
+
+```yaml
+model: "framework"
+active: true
+raw:
+  objectName:
+    flagActive: 1
+    artifactType: "pipeline|notebook"  
+    artifactName: "artifact_name"
+    dependsOn: ["other_objects"]
+    sourceSystemName: "source_name"
+    destinationObjectPattern: "dest_pattern"
+    # ... other properties
+silver:
+  objectName:
+    flagActive: 1
+    dependsOn: ["raw_objectName"]
+    artifactType: "notebook"
+    artifactName: "notebook_name"
+gold:
+  objectName:
+    flagActive: 1
+    group: "dims|facts"
+    dependsOnGroup: ["dims"]
+    artifactType: "notebook"
+    artifactName: "notebook_name"
+```
+
+## Dependencies
+
+- Microsoft Fabric environment
+- Python 3.8+
+- PySpark 3.3+
+- PyYAML 6.0+
+- fabric_common_lib (for Fabric integration patterns)
+
+## Integration with Fabric Framework
+
+This library is designed to work with the modernBI Fabric Framework:
+
+- Uses same patterns as `fabric_common_lib`
+- Integrates with KQL/Eventhouse for execution tracking
+- Supports both pipeline and notebook artifact types
+- Handles dependency resolution and group-based dependencies
+- Provides resume functionality for failed executions
+
+## License
+
+MIT License

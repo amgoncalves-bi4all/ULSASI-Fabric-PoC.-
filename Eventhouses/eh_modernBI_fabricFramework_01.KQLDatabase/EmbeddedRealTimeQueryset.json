@@ -1,0 +1,28 @@
+{
+  "queryset": {
+    "version": "1.0.0",
+    "dataSources": [
+      {
+        "id": "deba5077-04d0-4368-b0c4-8c4f2c6826a3",
+        "clusterUri": "https://trd-jpgqmvnphk0qyjp55m.z2.kusto.fabric.microsoft.com",
+        "type": "Fabric",
+        "databaseItemId": "9b6082b3-62f7-4523-9e7b-4e254654a454",
+        "databaseItemName": "eh_modernBI_fabricFramework_01"
+      }
+    ],
+    "tabs": [
+      {
+        "id": "20241f69-bedd-45ad-bd13-4279a08b6644",
+        "content": "// .create-or-alter materialized-view with (backfill=true) lastDatesConfig on table datesConfig {\n//     datesConfig\n//     | summarize startDate = max(startDate) by model, tableName, scope\n// }\n.create-or-alter materialized-view with (backfill=true) lastDatesConfig \non table datesConfig \n{\n    datesConfig\n    | summarize arg_max(timestamp, startDate) \n        by model, tableName, scope\n}\n\n.alter table processExecutionLog folder \"log\"\n\nlastDatesConfig\n\n.set-or-replace datesConfig_tmp  <|\ndatesConfig\n| extend timestamp = ingestion_time()\n\n.drop table datesConfig\n.rename table datesConfig_tmp to datesConfig",
+        "title": "",
+        "dataSourceId": "deba5077-04d0-4368-b0c4-8c4f2c6826a3"
+      },
+      {
+        "id": "99e2569f-3d9b-4cd9-9b3a-49855e6a66d7",
+        "content": "processExecutionLog\n| where status =='error'",
+        "title": "",
+        "dataSourceId": "deba5077-04d0-4368-b0c4-8c4f2c6826a3"
+      }
+    ]
+  }
+}

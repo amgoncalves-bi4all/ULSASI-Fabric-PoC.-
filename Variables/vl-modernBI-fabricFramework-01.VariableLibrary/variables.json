@@ -1,0 +1,65 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/variableLibrary/definition/variables/1.0.0/schema.json",
+  "variables": [
+    {
+      "name": "workspaceId",
+      "note": "",
+      "type": "String",
+      "value": "4fc684e0-5902-419b-bf6a-9de7fc814327"
+    },
+    {
+      "name": "bronze_lakehouseId",
+      "note": "",
+      "type": "String",
+      "value": "082b101a-c0f9-474c-91b7-93344e39e98e"
+    },
+    {
+      "name": "silver_lakehouseId",
+      "note": "",
+      "type": "String",
+      "value": "64111f28-e0dd-4a53-a6d6-d296c78d49cf"
+    },
+    {
+      "name": "gold_lakehouseId",
+      "note": "",
+      "type": "String",
+      "value": "c2c69edc-c99a-4183-a95b-8e1cada52700"
+    },
+    {
+      "name": "warehouseId",
+      "note": "",
+      "type": "String",
+      "value": "46aa9f1b-8004-465e-9f2a-e8739eb84be7"
+    },
+    {
+      "name": "eventhouseId",
+      "note": "",
+      "type": "String",
+      "value": "8d9b7c0f-3f39-41e2-b5f9-9ef9fcde0a92"
+    },
+    {
+      "name": "eventhouseName",
+      "note": "",
+      "type": "String",
+      "value": "eh_modernBI_fabricFramework_01"
+    },
+    {
+      "name": "eventhouseDatabase",
+      "note": "",
+      "type": "String",
+      "value": "eh_modernBI_fabricFramework_01"
+    },
+    {
+      "name": "warehouseConnectionString",
+      "note": "",
+      "type": "String",
+      "value": "fw33yqpjyhrefncr5lpnqy25oa-4ccmmtyclgnudp3ktxt7zakde4.datawarehouse.fabric.microsoft.com"
+    },
+    {
+      "name": "eventhouseWorkspaceId",
+      "note": "",
+      "type": "String",
+      "value": "4fc684e0-5902-419b-bf6a-9de7fc814327"
+    }
+  ]
+}

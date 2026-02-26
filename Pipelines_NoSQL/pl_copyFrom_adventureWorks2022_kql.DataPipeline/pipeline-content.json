@@ -1,0 +1,333 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Copy",
+        "typeProperties": {
+          "source": {
+            "type": "AzureSqlSource",
+            "sqlReaderQuery": {
+              "value": "@activity('lk_copyDataConfig').output.firstRow.sourceReadCommand",
+              "type": "Expression"
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00",
+            "datasetSettings": {
+              "type": "AzureSqlTable",
+              "typeProperties": {
+                "database": "sql-weu-dev-adventureworks2022-01"
+              },
+              "schema": [],
+              "externalReferences": {
+                "connection": "a5d8d3dc-e298-47d6-974d-48c1562eab4b"
+              },
+              "annotations": []
+            }
+          },
+          "sink": {
+            "type": "ParquetSink",
+            "formatSettings": {
+              "type": "ParquetWriteSettings",
+              "enableVertiParquet": true
+            },
+            "storeSettings": {
+              "type": "LakehouseWriteSettings"
+            },
+            "datasetSettings": {
+              "type": "Parquet",
+              "typeProperties": {
+                "location": {
+                  "type": "LakehouseLocation",
+                  "folderPath": {
+                    "value": "@activity('lk_copyDataConfig').output.firstRow.destinationDirectoryPattern",
+                    "type": "Expression"
+                  },
+                  "fileName": {
+                    "value": "@activity('lk_copyDataConfig').output.firstRow.destinationObjectPattern",
+                    "type": "Expression"
+                  }
+                },
+                "compressionCodec": "snappy"
+              },
+              "schema": [],
+              "linkedService": {
+                "name": "lh_modernBI_fabricFramework_bronze_01",
+                "properties": {
+                  "type": "Lakehouse",
+                  "typeProperties": {
+                    "artifactId": "d7326e19-074c-49cd-acaa-a1c0e2137b21",
+                    "workspaceId": "00000000-0000-0000-0000-000000000000",
+                    "rootFolder": "Files"
+                  },
+                  "annotations": []
+                }
+              },
+              "annotations": []
+            }
+          },
+          "translator": {
+            "type": "TabularTranslator",
+            "typeConversion": true,
+            "typeConversionSettings": {
+              "allowDataTruncation": true,
+              "treatBooleanAsNumber": false
+            }
+          },
+          "enableStaging": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "cd_copySQLTable",
+        "dependsOn": [
+          {
+            "activity": "lk_copyDataConfig",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderStoredProcedureName": "[admin].[uspSelectTempCopyDataConfig]",
+            "storedProcedureParameters": {
+              "model": {
+                "type": "String",
+                "value": {
+                  "value": "@pipeline().parameters.model",
+                  "type": "Expression"
+                }
+              },
+              "sourceObjectName": {
+                "type": "String",
+                "value": {
+                  "value": "@pipeline().parameters.sourceObjectName",
+                  "type": "Expression"
+                }
+              }
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "dw_modernBI_fabricFramework_01",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "46aa9f1b-8004-465e-9f2a-e8739eb84be7",
+                  "endpoint": "fw33yqpjyhrefncr5lpnqy25oa-4ccmmtyclgnudp3ktxt7zakde4.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "4fc684e0-5902-419b-bf6a-9de7fc814327"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 5,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "lk_copyDataConfig",
+        "dependsOn": []
+      },
+      {
+        "type": "ExecutePipeline",
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "1e80a5d5-2619-ad48-4448-8b9f301de1cc",
+            "type": "PipelineReference"
+          },
+          "parameters": {
+            "DestinationPath": {
+              "value": "@concat(activity('lk_copyDataConfig').output.firstRow.destinationDirectoryPattern,'/',activity('lk_copyDataConfig').output.firstRow.destinationObjectPattern)",
+              "type": "Expression"
+            },
+            "StartDate": {
+              "value": "@variables('startDate')",
+              "type": "Expression"
+            },
+            "RowCount": {
+              "value": "@activity('cd_copySQLTable').output.rowsCopied",
+              "type": "Expression"
+            },
+            "SourceLocationName": {
+              "value": "@activity('lk_copyDataConfig').output.firstRow.SourceLocationName",
+              "type": "Expression"
+            },
+            "Status": {
+              "value": "@activity('cd_copySQLTable').output.executionDetails[0].status",
+              "type": "Expression"
+            },
+            "ObjectName": {
+              "value": "@activity('lk_copyDataConfig').output.firstRow.SourceObjectName",
+              "type": "Expression"
+            },
+            "SourceReadCommand": {
+              "value": "@activity('lk_copyDataConfig').output.firstRow.SourceReadCommand",
+              "type": "Expression"
+            },
+            "ModelName": {
+              "value": "@pipeline().parameters.model",
+              "type": "Expression"
+            },
+            "BatchExecution": {
+              "value": "@pipeline().parameters.batchExecution",
+              "type": "Expression"
+            }
+          },
+          "waitOnCompletion": true
+        },
+        "policy": {
+          "secureInput": false
+        },
+        "name": "PL_SP_CopyDataLog_kql",
+        "dependsOn": [
+          {
+            "activity": "cd_copySQLTable",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "destinationDirectoryName",
+          "value": {
+            "value": "@concat(activity('lk_copyDataConfig').output.firstRow.DestinationDirectoryPattern,'/',formatDateTime(variables('startDate'),'yyyy/MM/dd/HH/mm'))",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "DestinationDirectoryName",
+        "dependsOn": [
+          {
+            "activity": "lk_copyDataConfig",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "destinationFileName",
+          "value": {
+            "value": "@concat(activity('lk_copyDataConfig').output.firstRow.DestinationObjectPattern,'_',formatDateTime(variables('startDate'),'yyyyMMdd_HHmm'),'.',activity('lk_copyDataConfig').output.firstRow.DestinationObjectType)",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "DestinationFileName",
+        "dependsOn": [
+          {
+            "activity": "lk_copyDataConfig",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "startDate",
+          "value": {
+            "value": "@utcNow()",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "StartDate",
+        "dependsOn": []
+      },
+      {
+        "type": "KustoQueryLanguage",
+        "typeProperties": {
+          "command": {
+            "value": "@concat(\n    '.set-or-append datesConfig <|\n\tdatatable(model: string, tableName: string, scope: string, startDate: datetime)\n\t[\n\t\t\"',pipeline().parameters.model,'\",\n\t\t\"',pipeline().parameters.sourceObjectName,'\",\n\t\t\"Extraction\",\n\t\tdatetime(',variables('startDate'),')\n\t]'\n)",
+            "type": "Expression"
+          },
+          "commandTimeout": "00:20:00"
+        },
+        "linkedService": {
+          "name": "eh_modernBI_fabricFramework_01",
+          "properties": {
+            "type": "KustoDatabase",
+            "typeProperties": {
+              "endpoint": "https://trd-jpgqmvnphk0qyjp55m.z2.kusto.fabric.microsoft.com",
+              "workspaceId": "00000000-0000-0000-0000-000000000000",
+              "database": "4654a454-4e25-9e7b-4523-62f79b6082b3"
+            },
+            "annotations": []
+          },
+          "objectId": "9b6082b3-62f7-4523-9e7b-4e254654a454"
+        },
+        "policy": {
+          "timeout": "0.00:20:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "KQL_datesConfig",
+        "dependsOn": [
+          {
+            "activity": "PL_SP_CopyDataLog_kql",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "model": {
+        "type": "string"
+      },
+      "sourceObjectName": {
+        "type": "string"
+      },
+      "batchExecution": {
+        "type": "string"
+      }
+    },
+    "variables": {
+      "startDate": {
+        "type": "String"
+      },
+      "destinationDirectoryName": {
+        "type": "String"
+      },
+      "destinationFileName": {
+        "type": "String"
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "NB_FACT_DELTA",
+    "description": "Template notebook for delta loading fact table"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "fb6e9fa4-cc79-42c7-8c47-8764b8029199"
+  }
+}

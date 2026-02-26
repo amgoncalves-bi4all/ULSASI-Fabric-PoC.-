@@ -1,0 +1,27 @@
+CREATE TABLE [temp].[copyDataConfig] (
+
+	[configId] int NOT NULL, 
+	[model] varchar(256) NOT NULL, 
+	[sourceSystemName] varchar(256) NOT NULL, 
+	[sourceSystemType] varchar(256) NOT NULL, 
+	[sourceLocationName] varchar(256) NULL, 
+	[sourceObjectName] varchar(256) NOT NULL, 
+	[sourceSelectColumns] varchar(2048) NULL, 
+	[sourceKeyColumns] varchar(256) NULL, 
+	[destinationSystemName] varchar(256) NOT NULL, 
+	[destinationSystemType] varchar(256) NOT NULL, 
+	[destinationObjectPattern] varchar(64) NOT NULL, 
+	[destinationDirectoryPattern] varchar(2048) NOT NULL, 
+	[destinationObjectType] varchar(256) NOT NULL, 
+	[extractType] varchar(64) NOT NULL, 
+	[deltaStartDate] datetime2(2) NULL, 
+	[deltaEndDate] datetime2(2) NULL, 
+	[deltaDateColumn] varchar(64) NULL, 
+	[deltaFilterCondition] varchar(2048) NULL, 
+	[flagBlock] bit NOT NULL, 
+	[blockSize] int NULL, 
+	[blockColumn] varchar(64) NULL, 
+	[sourceReadCommand] varchar(max) NULL, 
+	[flagActive] bit NOT NULL, 
+	[startDate] datetime2(2) NULL
+);

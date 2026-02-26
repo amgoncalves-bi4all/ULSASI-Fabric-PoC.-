@@ -1,0 +1,39 @@
+# Manual GitFlow Deployment Pipeline 
+# Uses fabric-gitflow-templates for standardized deployment
+# Allows manual selection of target environment with force update option
+
+trigger: none
+pr: none
+
+parameters:
+- name: targetEnvironment
+  displayName: 'Target Environment'
+  type: string
+  default: 'test'
+  values:
+    - development
+    - test
+    - production
+
+- name: forceUpdate
+  displayName: 'Force Update (overwrite workspace conflicts)'
+  type: boolean
+  default: false
+
+# Reference to template repository
+resources:
+  repositories:
+  - repository: fabric-templates
+    type: git
+    name: fabric-gitflow-templates
+    ref: main
+
+# Use standard manual GitFlow template
+extends:
+  template: templates/deploy-gitflow-manual-stage.yml@fabric-templates
+  parameters:
+    targetEnvironment: ${{ parameters.targetEnvironment }}
+    forceUpdate: ${{ parameters.forceUpdate }}
+    servicePrincipalGroup: 'FabricServicePrincipal'
+    workspaceVariableGroup: 'FabricVariables'
+    scriptsRepository: 'fabric-templates'

@@ -1,0 +1,76 @@
+[
+  {
+    "name": "Store_Silver",
+    "path": "/Tables/framework",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/Sales/Store_Silver",
+        "itemId": "70ffc883-83d4-4cd5-ac8a-a1c7b06de8d3",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "artifactType": "Lakehouse"
+      }
+    }
+  },
+  {
+    "name": "SalesOrderDetail_Silver",
+    "path": "/Tables/framework",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/Sales/SalesOrderDetail_Silver",
+        "itemId": "70ffc883-83d4-4cd5-ac8a-a1c7b06de8d3",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "artifactType": "Lakehouse"
+      }
+    }
+  },
+  {
+    "name": "silverGoldDependency",
+    "path": "/Tables/config",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/admin/silverGoldDependency",
+        "itemId": "46aa9f1b-8004-465e-9f2a-e8739eb84be7",
+        "workspaceId": "4fc684e0-5902-419b-bf6a-9de7fc814327"
+      }
+    }
+  },
+  {
+    "name": "silverGoldConfig",
+    "path": "/Tables/config",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/admin/silverGoldConfig",
+        "itemId": "46aa9f1b-8004-465e-9f2a-e8739eb84be7",
+        "workspaceId": "4fc684e0-5902-419b-bf6a-9de7fc814327"
+      }
+    }
+  },
+  {
+    "name": "processDatesConfig",
+    "path": "/Tables/config",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/admin/processDatesConfig",
+        "itemId": "46aa9f1b-8004-465e-9f2a-e8739eb84be7",
+        "workspaceId": "4fc684e0-5902-419b-bf6a-9de7fc814327"
+      }
+    }
+  },
+  {
+    "name": "inferredMembersConfig",
+    "path": "/Tables/config",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/admin/inferredMembersConfig",
+        "itemId": "46aa9f1b-8004-465e-9f2a-e8739eb84be7",
+        "workspaceId": "4fc684e0-5902-419b-bf6a-9de7fc814327"
+      }
+    }
+  }
+]

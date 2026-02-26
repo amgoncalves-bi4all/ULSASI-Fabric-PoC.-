@@ -1,0 +1,73 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "ExecutePipeline",
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "4fdf4527-0186-894c-4cbc-ce127821ed4d",
+            "type": "PipelineReference"
+          },
+          "parameters": {
+            "param_ws_official_prefix": "modernBI-fabricFramework-engineering"
+          },
+          "waitOnCompletion": true
+        },
+        "policy": {
+          "secureInput": false
+        },
+        "name": "pl_get_fabric_ids",
+        "dependsOn": []
+      },
+      {
+        "type": "ExecutePipeline",
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "429f3387-783c-a328-418c-7e95dace21d1",
+            "type": "PipelineReference"
+          },
+          "parameters": {
+            "Model": "framework",
+            "param_official_workspace_id": {
+              "value": "@activity('pl_get_fabric_ids').output.pipelineReturnValue.var_official_workspace_id",
+              "type": "Expression"
+            },
+            "param_official_lh_bronze_id": {
+              "value": "@activity('pl_get_fabric_ids').output.pipelineReturnValue.var_official_lh_bronze_id",
+              "type": "Expression"
+            },
+            "param_official_lh_silver_id": {
+              "value": "@activity('pl_get_fabric_ids').output.pipelineReturnValue.var_official_lh_silver_id",
+              "type": "Expression"
+            },
+            "param_official_lh_gold_id": {
+              "value": "@activity('pl_get_fabric_ids').output.pipelineReturnValue.var_official_lh_gold_id",
+              "type": "Expression"
+            },
+            "param_official_warehouse_id": {
+              "value": "@activity('pl_get_fabric_ids').output.pipelineReturnValue.var_official_warehouse_id",
+              "type": "Expression"
+            },
+            "param_official_warehouse_connstring": {
+              "value": "@activity('pl_get_fabric_ids').output.pipelineReturnValue.var_official_warehouse_connstring",
+              "type": "Expression"
+            }
+          },
+          "waitOnCompletion": true
+        },
+        "policy": {
+          "secureInput": false
+        },
+        "name": "pl_modernBI_fabricFramework_master",
+        "dependsOn": [
+          {
+            "activity": "pl_get_fabric_ids",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

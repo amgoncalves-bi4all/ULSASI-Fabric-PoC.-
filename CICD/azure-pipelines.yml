@@ -1,0 +1,50 @@
+trigger:
+  branches:
+    include:
+      - main # Only trigger when the main branch changes
+
+variables:
+# a variable group
+- group: GithubVariables
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+  - checkout: self
+    persistCredentials: true
+
+  - script: |
+      git config --global user.email "devops-bot@example.com"
+      git config --global user.name "DevOps Sync Bot"
+
+      # Authenticate Git for Azure DevOps using the PAT
+      git remote set-url origin https://$(DEVOPS_PAT)@dev.azure.com/KnowledgeInnovation/CoE%20-%20Modern%20BI%20-%20Framework%20Fabric/_git/modernBI-fabricFramework-engineering
+
+      # Add GitHub as a remote
+      git remote add github https://$(GITHUB_PAT)@$(GITHUB_REPO) || true
+
+      # Fetch latest changes from Azure DevOps
+      git fetch origin main || echo "[W] 'main' branch not found in Azure DevOps"
+
+      # Ensure we are on the 'main' branch, create if missing
+      if git show-ref --verify --quiet refs/heads/main; then
+        echo "[I] 'main' branch exists locally."
+        git checkout main
+      else
+        echo "[W] 'main' branch not found locally. Creating..."
+        git checkout --orphan main
+        git commit --allow-empty -m "Initial commit"
+        git push origin main
+      fi
+
+      # Push the 'main' branch to GitHub
+      if git ls-remote --exit-code github main; then
+        echo "[I] 'main' branch exists in GitHub, updating..."
+        git push --force github main
+      else
+        echo "[I] 'main' branch does not exist in GitHub, creating..."
+        git push github main
+      fi
+
+    displayName: 'Sync Azure DevOps to GitHub'

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "KQLQueryset",
+    "displayName": "eh_modernBI_fabricFramework_01_queryset Archived",
+    "description": "eh_modernBI_fabricFramework_01_queryset Archived"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "89fed983-a73a-82f6-4de7-4cc5941981c6"
+  }
+}

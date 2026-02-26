@@ -1,0 +1,231 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "ExecutePipeline",
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "9e9c39ba-1db3-4fd2-b5ee-a97a0ca3b8ee",
+            "type": "PipelineReference"
+          },
+          "parameters": {
+            "Model": {
+              "value": "@pipeline().parameters.Model",
+              "type": "Expression"
+            },
+            "param_official_workspace_id": {
+              "value": "@pipeline().parameters.param_official_workspace_id",
+              "type": "Expression"
+            },
+            "param_official_lh_bronze_id": {
+              "value": "@pipeline().parameters.param_official_lh_bronze_id",
+              "type": "Expression"
+            },
+            "param_official_lh_silver_id": {
+              "value": "@pipeline().parameters.param_official_lh_silver_id",
+              "type": "Expression"
+            },
+            "param_official_lh_gold_id": {
+              "value": "@pipeline().parameters.param_official_lh_gold_id",
+              "type": "Expression"
+            },
+            "param_official_warehouse_id": {
+              "value": "@pipeline().parameters.param_official_warehouse_id",
+              "type": "Expression"
+            },
+            "param_official_warehouse_connstring": {
+              "value": "@pipeline().parameters.param_official_warehouse_connstring",
+              "type": "Expression"
+            }
+          },
+          "waitOnCompletion": true
+        },
+        "policy": {
+          "secureInput": false
+        },
+        "name": "pl_modernBI_fabricFramework_copyFromSource",
+        "dependsOn": []
+      },
+      {
+        "type": "TridentNotebook",
+        "typeProperties": {
+          "notebookId": {
+            "value": "@activity('filter_get_NB_RunSilverNotebooksID').output.value[0].id",
+            "type": "Expression"
+          },
+          "workspaceId": {
+            "value": "@pipeline().parameters.param_official_workspace_id",
+            "type": "Expression"
+          },
+          "parameters": {
+            "modelName": {
+              "value": {
+                "value": "@pipeline().parameters.Model",
+                "type": "Expression"
+              },
+              "type": "string"
+            }
+          },
+          "sessionTag": "silverHighConcurrency"
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "nb_runSilverNotebooks",
+        "dependsOn": [
+          {
+            "activity": "filter_get_NB_RunSilverNotebooksID",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "TridentNotebook",
+        "typeProperties": {
+          "notebookId": {
+            "value": "@activity('filter_get_NB_RunGoldNotebooksID').output.value[0].id",
+            "type": "Expression"
+          },
+          "workspaceId": {
+            "value": "@pipeline().parameters.param_official_workspace_id",
+            "type": "Expression"
+          },
+          "parameters": {
+            "modelName": {
+              "value": {
+                "value": "@pipeline().parameters.Model",
+                "type": "Expression"
+              },
+              "type": "string"
+            }
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "nb_runGoldNotebooks",
+        "dependsOn": [
+          {
+            "activity": "filter_get_NB_RunGoldNotebooksID",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "WebActivity",
+        "typeProperties": {
+          "method": "GET",
+          "relativeUrl": {
+            "value": "@concat('workspaces/', pipeline().parameters.param_official_workspace_id, '/notebooks')",
+            "type": "Expression"
+          },
+          "headers": {}
+        },
+        "externalReferences": {
+          "connection": "b03b482e-90ea-4aeb-8a57-a51b153d27eb"
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "web_getAllNotebooks",
+        "dependsOn": [
+          {
+            "activity": "pl_modernBI_fabricFramework_copyFromSource",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Filter",
+        "typeProperties": {
+          "items": {
+            "value": "@activity('web_getAllNotebooks').output.value",
+            "type": "Expression"
+          },
+          "condition": {
+            "value": "@equals(item().displayName, 'NB_RunSilverNotebooks')",
+            "type": "Expression"
+          }
+        },
+        "name": "filter_get_NB_RunSilverNotebooksID",
+        "dependsOn": [
+          {
+            "activity": "web_getAllNotebooks",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Filter",
+        "typeProperties": {
+          "items": {
+            "value": "@activity('web_getAllNotebooks').output.value",
+            "type": "Expression"
+          },
+          "condition": {
+            "value": "@equals(item().displayName, 'NB_RunGoldNotebooks')",
+            "type": "Expression"
+          }
+        },
+        "name": "filter_get_NB_RunGoldNotebooksID",
+        "dependsOn": [
+          {
+            "activity": "nb_runSilverNotebooks",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "Model": {
+        "type": "string"
+      },
+      "param_official_workspace_id": {
+        "type": "string",
+        "defaultValue": "4fc684e0-5902-419b-bf6a-9de7fc814327"
+      },
+      "param_official_lh_bronze_id": {
+        "type": "string",
+        "defaultValue": "082b101a-c0f9-474c-91b7-93344e39e98e"
+      },
+      "param_official_lh_silver_id": {
+        "type": "string",
+        "defaultValue": "64111f28-e0dd-4a53-a6d6-d296c78d49cf"
+      },
+      "param_official_lh_gold_id": {
+        "type": "string",
+        "defaultValue": "c2c69edc-c99a-4183-a95b-8e1cada52700"
+      },
+      "param_official_warehouse_id": {
+        "type": "string",
+        "defaultValue": "46aa9f1b-8004-465e-9f2a-e8739eb84be7"
+      },
+      "param_official_warehouse_connstring": {
+        "type": "string",
+        "defaultValue": "fw33yqpjyhrefncr5lpnqy25oa-4ccmmtyclgnudp3ktxt7zakde4.datawarehouse.fabric.microsoft.com"
+      }
+    }
+  }
+}

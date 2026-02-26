@@ -1,0 +1,90 @@
+# Inferred Members Configuration
+# This configuration defines the default values and surrogate keys for inferred members
+# based on different data types when source data is missing or invalid
+
+inferredMembers:
+  # Date type inferred members
+  DateType:
+    - columnValue: "30/12/2999"
+      skValue: -2
+    - columnValue: "31/12/2999"
+      skValue: -1
+  
+  # Double/Decimal type inferred members
+  DoubleType:
+    - columnValue: -1
+      skValue: -1
+    - columnValue: -2
+      skValue: -2
+  
+  # Boolean type inferred members
+  BooleanType:
+    - columnValue: false
+      skValue: -1
+    - columnValue: false
+      skValue: -2
+  
+  # Integer type inferred members
+  IntegerType:
+    - columnValue: -1
+      skValue: -1
+    - columnValue: -2
+      skValue: -2
+  
+  # Long type inferred members
+  LongType:
+    - columnValue: -1
+      skValue: -1
+    - columnValue: -2
+      skValue: -2
+  
+  # String type inferred members
+  StringType:
+    - columnValue: "N/A"
+      skValue: -2
+    - columnValue: "Unk"
+      skValue: -1
+  
+  # Timestamp type inferred members
+  TimestampType:
+    - columnValue: "00:00"
+      skValue: -1
+    - columnValue: "00:00"
+      skValue: -2
+
+# Mapping configuration for easier lookups
+typeMapping:
+  DateType: 
+    default: "31/12/2999"  # Default value (skValue: -1)
+    alternative: "30/12/2999"  # Alternative value (skValue: -2)
+  
+  DoubleType:
+    default: -1  # Default value (skValue: -1)
+    alternative: -2  # Alternative value (skValue: -2)
+  
+  BooleanType:
+    default: false  # Default value (skValue: -1)
+    alternative: false  # Alternative value (skValue: -2)
+  
+  IntegerType:
+    default: -1  # Default value (skValue: -1)
+    alternative: -2  # Alternative value (skValue: -2)
+  
+  LongType:
+    default: -1  # Default value (skValue: -1)
+    alternative: -2  # Alternative value (skValue: -2)
+  
+  StringType:
+    default: "Unk"  # Default value (skValue: -1)
+    alternative: "N/A"  # Alternative value (skValue: -2)
+  
+  TimestampType:
+    default: "00:00"  # Default value (skValue: -1)
+    alternative: "00:00"  # Alternative value (skValue: -2)
+
+# Configuration metadata
+metadata:
+  version: "1.0"
+  description: "Configuration for inferred member values and surrogate keys"
+  lastUpdated: "2025-08-18"
+  usage: "Used by dimension loading processes to handle missing or invalid source data"
